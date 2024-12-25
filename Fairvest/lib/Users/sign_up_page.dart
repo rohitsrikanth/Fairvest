@@ -36,7 +36,6 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController retypePasswordController =
       TextEditingController();
-
   @override
   void dispose() {
     // Dispose controllers to prevent memory leaks

@@ -1,23 +1,71 @@
+import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
-void main() {
-  runApp(const WeatherApp());
-}
+class ForecastScreen extends StatefulWidget {
+  final double lat;
+  final double lon;
 
-class WeatherApp extends StatelessWidget {
-  const WeatherApp({super.key});
+  const ForecastScreen({required this.lat, required this.lon, Key? key})
+      : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: WeatherScreen1(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  _ForecastScreenState createState() => _ForecastScreenState();
 }
 
-class WeatherScreen1 extends StatelessWidget {
-  const WeatherScreen1({super.key});
+class _ForecastScreenState extends State<ForecastScreen> {
+  List<dynamic>? forecastData;
+  String error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchForecast();
+  }
+
+  Future<void> fetchForecast() async {
+    try {
+      final url = Uri.parse(
+          '$baseUrl/weather/forecast/latlon/${widget.lat}/${widget.lon}');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Check if 'forecast' key exists in the data
+        if (data.containsKey('forecast')) {
+          setState(() {
+            forecastData = data['forecast'];
+          });
+        } else {
+          setState(() {
+            error = 'Unexpected data format: No forecast data found';
+          });
+        }
+      } else {
+        setState(() => error = 'Failed to load forecast');
+      }
+    } catch (e) {
+      setState(() => error = e.toString());
+    }
+  }
+
+  IconData getWeatherIcon(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'clear':
+        return Icons.wb_sunny;
+      case 'clouds':
+        return Icons.cloud;
+      case 'rain':
+        return Icons.grain;
+      case 'thunderstorm':
+        return Icons.flash_on;
+      default:
+        return Icons.cloud;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,61 +82,52 @@ class WeatherScreen1 extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () {},
+                  onPressed: () => Navigator.pop(context),
                 ),
-                const Text(
-                  'Sep, 12',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
+                Text(
+                  DateFormat('MMM, dd').format(DateTime.now()),
+                  style: const TextStyle(color: Colors.white, fontSize: 18),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white),
-                  onPressed: () {},
+                const IconButton(
+                  icon: Icon(Icons.settings, color: Colors.white),
+                  onPressed: null,
                 ),
               ],
             ),
             const SizedBox(height: 20),
             const Text(
-              'Today',
+              '5-Day Forecast',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                WeatherHourlyItem(time: "15.00", temp: "29°C"),
-                WeatherHourlyItem(time: "16.00", temp: "26°C"),
-                WeatherHourlyItem(time: "18.00", temp: "23°C"),
-                WeatherHourlyItem(time: "19.00", temp: "22°C"),
-              ],
-            ),
-            const SizedBox(height: 30),
-            const Text(
-              'Next Forecast',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 20),
+            if (error.isNotEmpty)
+              Center(
+                  child:
+                      Text(error, style: const TextStyle(color: Colors.white)))
+            else if (forecastData == null)
+              const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: forecastData!.length,
+                  itemBuilder: (context, index) {
+                    final forecast = forecastData![index];
+                    return WeatherDailyItem(
+                      date: DateFormat('MMM, dd').format(
+                        DateTime.fromMillisecondsSinceEpoch(
+                            forecast['dt'] * 1000),
+                      ),
+                      temp: '${forecast['temp'].round()}°',
+                      icon: getWeatherIcon(forecast['main']),
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView(
-                children: const [
-                  WeatherDailyItem(date: 'Sep, 13', temp: '21°', icon: Icons.bolt),
-                  WeatherDailyItem(date: 'Sep, 14', temp: '22°', icon: Icons.cloud),
-                  WeatherDailyItem(date: 'Sep, 15', temp: '34°', icon: Icons.wb_sunny),
-                  WeatherDailyItem(date: 'Sep, 16', temp: '27°', icon: Icons.cloud),
-                  WeatherDailyItem(date: 'Sep, 17', temp: '32°', icon: Icons.wb_sunny),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -96,32 +135,7 @@ class WeatherScreen1 extends StatelessWidget {
   }
 }
 
-class WeatherHourlyItem extends StatelessWidget {
-  final String time;
-  final String temp;
-
-  const WeatherHourlyItem({required this.time, required this.temp, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Icon(Icons.wb_sunny, color: Colors.white),
-        const SizedBox(height: 5),
-        Text(
-          temp,
-          style: const TextStyle(color: Colors.white),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          time,
-          style: const TextStyle(color: Colors.white70),
-        ),
-      ],
-    );
-  }
-}
-
+// Keep your existing WeatherDailyItem widget
 class WeatherDailyItem extends StatelessWidget {
   final String date;
   final String temp;

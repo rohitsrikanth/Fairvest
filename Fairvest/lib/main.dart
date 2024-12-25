@@ -53,7 +53,6 @@ class MyApp extends StatelessWidget {
           '/support': (context) => const SupportPage(),
           '/settings': (context) => const SettingsPage(),
           '/weatherhome': (context) => const WeatherScreen(),
-          '/weatherdetail': (context) => const WeatherScreen1(),
         });
   }
 }

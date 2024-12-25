@@ -3,6 +3,8 @@ import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:geocoding/geocoding.dart' as geocoding; // Alias geocoding
+import 'package:location/location.dart' as location; // Alias location
 
 void main() {
   runApp(const MyApp());
@@ -38,8 +40,58 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
   String selectedAddressType = 'Home';
   bool showModal = false;
 
+  Future<void> getAddressFromLatLng() async {
+    location.Location locationService = location.Location();
+
+    bool _serviceEnabled;
+    location.PermissionStatus _permissionGranted;
+
+    _serviceEnabled = await locationService.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await locationService.requestService();
+      if (!_serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location service not enabled')),
+        );
+        return;
+      }
+    }
+
+    _permissionGranted = await locationService.hasPermission();
+    if (_permissionGranted == location.PermissionStatus.denied) {
+      _permissionGranted = await locationService.requestPermission();
+      if (_permissionGranted != location.PermissionStatus.granted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permission denied')),
+        );
+        return;
+      }
+    }
+
+    final location.LocationData locationData =
+        await locationService.getLocation();
+
+    try {
+      List<geocoding.Placemark> placemarks =
+          await geocoding.placemarkFromCoordinates(
+        locationData.latitude!,
+        locationData.longitude!,
+      );
+      geocoding.Placemark place = placemarks[0];
+      setState(() {
+        _houseController.text = place.street ?? '';
+        _apartmentController.text = place.subLocality ?? '';
+        _directionController.text = '${place.locality}, ${place.country}';
+      });
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching address: $e')),
+      );
+    }
+  }
+
   Future<void> _saveAddressDetails() async {
-    // Collect address data
     final addressDetails = {
       "address": {
         "house": _houseController.text,
@@ -51,7 +103,6 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
 
     print(addressDetails);
     try {
-      // Make the POST request to your Flask backend
       final response = await http.post(
         Uri.parse('$baseUrl/buyers_sign3'),
         headers: {'Content-Type': 'application/json'},
@@ -59,7 +110,6 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
       );
 
       if (response.statusCode == 200) {
-        // Show modal on success
         setState(() {
           showModal = true;
         });
@@ -74,7 +124,7 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close the dialog
+                    Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -89,7 +139,6 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
           },
         );
       } else {
-        // Handle error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${response.body}')),
         );
@@ -119,6 +168,17 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
             const SizedBox(height: 10),
             _buildTextField(
                 _directionController, 'Direction to reach the location'),
+            const SizedBox(height: 20),
+
+            // Fetch Address Button
+            ElevatedButton.icon(
+              onPressed: getAddressFromLatLng,
+              icon: const Icon(Icons.location_pin),
+              label: const Text('Use Current Location'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Address Type

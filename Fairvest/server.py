@@ -451,12 +451,14 @@ def weather_by_city(city_name):
 @app.route('/weather/latlon/<lat>/<lon>', methods=['GET'])
 def weather_by_latlon(lat, lon):
     weather_data = get_weather_by_latlon(lat, lon)
+    print(weather_data)
     return jsonify({"weather": weather_data})
 
 
 @app.route('/weather/forecast/latlon/<lat>/<lon>', methods=['GET'])
 def weather_forecast(lat, lon):
     forecast_data = get_five_day_forecast(lat, lon)
+    print(forecast_data)
     return jsonify({"forecast": forecast_data})
 
 
