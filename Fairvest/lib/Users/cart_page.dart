@@ -1,23 +1,180 @@
+import 'package:fairvest1/Sellers/Farmers/chat_bot.dart';
+import 'package:fairvest1/Users/home_page.dart';
+import 'package:fairvest1/Users/my_orders_page.dart';
+import 'package:fairvest1/Users/profile_page.dart';
+import 'package:fairvest1/constants.dart';
+import 'package:fairvest1/widget/custom_drawer.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CartPage extends StatefulWidget {
+  const CartPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: CartPage(),
-    );
-  }
+  _CartPageState createState() => _CartPageState();
 }
 
-class CartPage extends StatelessWidget {
-  const CartPage({super.key});
+class _CartPageState extends State<CartPage> {
+  List<dynamic> cartItems = [];
+  String userName = "";
+  late Map<String, dynamic> userData = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCartItems();
+  }
+
+  Future<void> fetchCartItems() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/getuser'));
+      if (response.statusCode == 200) {
+        setState(() {
+          userData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      try {
+        final response = await http.get(Uri.parse('$baseUrl/getuser1'));
+        if (response.statusCode == 200) {
+          setState(() {
+            userData = jsonDecode(response.body);
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Failed to fetch user details');
+        }
+      } catch (e) {
+        print('Error fetching user details: $e');
+      }
+    }
+    String userName = userData['name'];
+    final Uri url = Uri.parse('$baseUrl/get_cart?user_name=$userName');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        setState(() {
+          cartItems = responseData["cart"];
+        });
+      } else {
+        print("Failed to load cart items: ${response.body}");
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to load cart items.")),
+        );
+      }
+    } catch (e) {
+      print("Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("An error occurred. Please try again.")),
+      );
+    }
+  }
+
+  Widget _buildDeliveryAddress() {
+    return Container(
+      padding: const EdgeInsets.all(2.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Icon(Icons.local_shipping, color: Colors.green),
+                SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Get it in 1 day',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (userData['address'] != null)
+                      Text(
+                        'House No: ${userData['address']['house'] ?? 'N/A'}, '
+                        'Apartment: ${userData['address']['apartment'] ?? 'N/A'},\n'
+                        'Street: ${userData['address']['street'] ?? 'N/A'}, '
+                        'Directions: ${userData['address']['directions'] ?? 'N/A'}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                      )
+                    else
+                      const Text(
+                        'No Address Available',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.red,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(String name, String weight, String price,
+      String originalPrice, String imagePath) {
+    return Card(
+      elevation: 2.0,
+      margin: const EdgeInsets.symmetric(vertical: 5.0),
+      child: ListTile(
+        leading: Image.network(
+          imagePath ?? 'assets/placeholder1.jpeg',
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset(
+              'assets/placeholder1.jpeg',
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+            );
+          },
+        ),
+        title: Text(name),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("₹$price", style: const TextStyle(fontSize: 25)),
+            Text("₹$originalPrice",
+                style: const TextStyle(
+                    decoration: TextDecoration.lineThrough, fontSize: 12)),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+                icon: const Icon(Icons.remove, color: Colors.green),
+                onPressed: () {}),
+            const Text("1"),
+            IconButton(
+                icon: const Icon(Icons.add, color: Colors.green),
+                onPressed: () {}),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,27 +186,29 @@ class CartPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {},
-          )
+          ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(10.0),
-        children: [
-          _buildDeliveryAddress(),
-          _buildDeliveryInfo("Delivery 1", [
-            _buildProductCard("Onion - Organically Grown", "1kg", 102.04, 431.51, "assets/oni.jpg"),
-            _buildProductCard("Tomato - Local", "1kg", 44.63, 67.53, "assets/tomato.png"),
-          ]),
-          _buildDeliveryInfo("Delivery 2", [
-            _buildProductCard("Ponni Raw Rice", "26kg", 1673.07, 2600.0, "assets/rice.jpg"),
-          ]),
-          //const Divider(thickness: 1.0),
-        ],
-      ),
+      body: cartItems.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(10.0),
+              children: [
+                _buildDeliveryAddress(),
+                for (var item in cartItems)
+                  _buildProductCard(
+                    item['name'],
+                    item['weight'],
+                    item['price'],
+                    item['original_price'],
+                    item['image_path'],
+                  ),
+              ],
+            ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Ensures minimal height
+          mainAxisSize: MainAxisSize.min,
           children: [
             _buildSummary(),
             const SizedBox(height: 10),
@@ -60,84 +219,56 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDeliveryAddress() {
-    return Container(
-      padding: const EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Row(
+  Widget _buildSummary() {
+    // Calculate total price and savings dynamically
+    double totalPrice = 0.0;
+    double totalSavings = 0.0;
+
+    for (var item in cartItems) {
+      double price = double.parse(item['price'].toString());
+      double originalPrice = double.parse(item['original_price'].toString());
+      totalPrice += price;
+      totalSavings += (originalPrice - price);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.location_on, color: Colors.green),
-          SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Deliver to Home",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "10/42, 1st floor, C3, Subramaniyan Nagar, Chennai - 600024",
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Total:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
+                "₹${totalPrice.toStringAsFixed(2)}", // Display total price
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            "Saved ₹${totalSavings.toStringAsFixed(2)}", // Display total savings
+            style: const TextStyle(color: Colors.green, fontSize: 14),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDeliveryInfo(String deliveryTitle, List<Widget> products) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(
-            deliveryTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-        ),
-        ...products,
-      ],
-    );
-  }
-
-  Widget _buildProductCard(String name, String weight, double price, double originalPrice, String imagePath) {
-    return Card(
-      elevation: 2.0,
-      margin: const EdgeInsets.symmetric(vertical: 5.0),
-      child: ListTile(
-        leading: Image.asset(imagePath, width: 50, height: 50, fit: BoxFit.cover),
-        title: Text(name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("$weight • ₹$price"),
-            Text("₹$originalPrice", style: const TextStyle(decoration: TextDecoration.lineThrough, fontSize: 12)),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(icon: const Icon(Icons.remove, color: Colors.green), onPressed: () {}),
-            const Text("1"),
-            IconButton(icon: const Icon(Icons.add, color: Colors.green), onPressed: () {}),
-          ],
-        ),
-      ),
-    );
-  }
   Widget _buildActionButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const MyOrdersApp()));
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
           ),
@@ -150,38 +281,62 @@ class CartPage extends StatelessWidget {
             backgroundColor: Colors.grey[300],
           ),
           icon: const Icon(Icons.schedule, color: Colors.black),
-          label: const Text("Schedule delivery", style: TextStyle(color: Colors.black)),
+          label: const Text("Schedule delivery",
+              style: TextStyle(color: Colors.black)),
         ),
       ],
     );
   }
-}
 
-Widget _buildSummary() {
-  return const Padding(
-    padding: EdgeInsets.symmetric(vertical: 10.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Total:",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text(
-              "₹1819.74",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-          ],
-        ),
-        SizedBox(height: 5),
-        Text(
-          "Saved ₹969.30",
-          style: TextStyle(color: Colors.green, fontSize: 14),
-        ),
+  BottomNavigationBar _buildBottomNavigationBar() {
+    int _currentIndex = 1;
+
+    return BottomNavigationBar(
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_scanner), label: 'Scanner'),
+        BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
+        BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
       ],
-    ),
-  );
+      currentIndex: _currentIndex,
+      onTap: (index) {
+        if (_currentIndex != index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          switch (index) {
+            case 0:
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const FairvestHomePage()));
+              break;
+            case 1:
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()));
+              break;
+            case 2:
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (_) => const CartPage()));
+              break;
+            case 3:
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (_) => const CartPage()));
+              break;
+            case 4:
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const DrawerMenuPage()));
+              break;
+            case 5:
+              Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (_) => OpenUrlPage()));
+              break;
+          }
+        }
+      },
+      selectedItemColor: Colors.green,
+      unselectedItemColor: Colors.grey,
+    );
+  }
 }

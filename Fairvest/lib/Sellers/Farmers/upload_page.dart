@@ -3,7 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' as Foundation;
 import 'package:http/http.dart' as http;
-import 'package:fairvest1/constants.dart';
+import 'package:intl/intl.dart'; // For date formatting
+import 'package:fairvest1/constants.dart'; // Ensure `baseUrl` is properly defined in this file.
 
 void main() => runApp(const UploadProductApp());
 
@@ -19,27 +20,34 @@ class UploadProductApp extends StatelessWidget {
   }
 }
 
-Future<void> uploadProduct(
-    String description, String units, String date, String imagePath) async {
-  final uri = Uri.parse('$baseUrl/upload-product'); // Backend API endpoint
-  final request = http.MultipartRequest('POST', uri);
+Future<void> uploadProduct(String productName, String description, String units,
+    String pricePerUnit, String date, String category, String imagePath) async {
+  try {
+    final uri = Uri.parse('$baseUrl/upload-product'); // Backend API endpoint
+    final request = http.MultipartRequest('POST', uri);
 
-  // Add form fields
-  request.fields['description'] = description;
-  request.fields['units'] = units;
-  request.fields['date'] = date;
+    // Add form fields
+    request.fields['product_name'] = productName;
+    request.fields['description'] = description;
+    request.fields['units'] = units;
+    request.fields['price_per_unit'] = pricePerUnit;
+    request.fields['date'] = date;
+    request.fields['category'] = category;
 
-  // Attach the image file
-  request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    // Attach the image file
+    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
 
-  final response = await request.send();
-  final responseBody = await http.Response.fromStream(response);
+    final response = await request.send();
+    final responseBody = await http.Response.fromStream(response);
 
-  if (response.statusCode == 200) {
-    print("Product uploaded successfully!");
-  } else {
-    print("Failed to upload product. Status code: ${response.statusCode}");
-    print("Response: ${responseBody.body}");
+    if (response.statusCode == 200) {
+      print("Product uploaded successfully!");
+    } else {
+      print("Failed to upload product. Status code: ${response.statusCode}");
+      print("Response: ${responseBody.body}");
+    }
+  } catch (e) {
+    print("Error uploading product: $e");
   }
 }
 
@@ -52,9 +60,20 @@ class UploadProductPage extends StatefulWidget {
 
 class _UploadProductPageState extends State<UploadProductPage> {
   File? _selectedImage;
+  final TextEditingController _productNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _unitsController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
   DateTime? _selectedDate;
+  final List<String> _categories = [
+    'Fresh Vegetables',
+    'Fruits and Berries',
+    'Oil Seeds',
+    'Oils',
+    'Grains',
+    'Pulses'
+  ];
+  String _selectedCategory = 'Fresh Vegetables'; // Default category
 
   /// Function to pick an image
   Future<void> _pickImage() async {
@@ -96,22 +115,30 @@ class _UploadProductPageState extends State<UploadProductPage> {
 
   /// Function to handle submission
   void _handleSubmit() async {
+    final productName = _productNameController.text.trim();
     final description = _descriptionController.text.trim();
     final units = _unitsController.text.trim();
+    final price = _priceController.text.trim();
     final date = _selectedDate;
     final image = _selectedImage;
 
-    if (description.isEmpty || units.isEmpty || date == null || image == null) {
+    if (productName.isEmpty ||
+        description.isEmpty ||
+        units.isEmpty ||
+        price.isEmpty ||
+        date == null ||
+        image == null) {
       showFeedback("Please fill all fields.");
       return;
     }
 
     try {
       // Format the date as YYYY-MM-DD
-      final formattedDate = "${date.year}-${date.month}-${date.day}";
+      final formattedDate = DateFormat('yyyy-MM-dd').format(date);
 
       // Call the uploadProduct function
-      await uploadProduct(description, units, formattedDate, image.path);
+      await uploadProduct(productName, description, units, price, formattedDate,
+          _selectedCategory, image.path);
 
       showFeedback("Product submitted successfully!");
     } catch (error) {
@@ -137,14 +164,15 @@ class _UploadProductPageState extends State<UploadProductPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 16),
               _buildOptionCard(
-                icon: Icons.description,
-                label: "Enter product description:",
+                icon: Icons.edit,
+                label: "Product Name",
                 child: TextField(
-                  controller: _descriptionController,
-                  maxLines: 3,
+                  controller: _productNameController,
+                  keyboardType: TextInputType.text,
                   decoration: InputDecoration(
-                    hintText: "Describe your product (max 200 words)",
+                    hintText: "Enter product name",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -178,6 +206,56 @@ class _UploadProductPageState extends State<UploadProductPage> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: "Enter quantity in Kg",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildOptionCard(
+                icon: Icons.attach_money,
+                label: "Enter price per unit:",
+                child: TextField(
+                  controller: _priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: "Enter price per unit",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildOptionCard(
+                icon: Icons.category,
+                label: "Select Category",
+                child: DropdownButton<String>(
+                  value: _selectedCategory,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedCategory = newValue!;
+                    });
+                  },
+                  items:
+                      _categories.map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildOptionCard(
+                icon: Icons.description,
+                label: "Enter product description:",
+                child: TextField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: "Describe your product (max 200 words)",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

@@ -1,3 +1,4 @@
+import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -33,7 +34,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
   String weatherData = "";
 
   Future<void> fetchWeatherByCity(String cityName) async {
-    final url = Uri.parse('http://127.0.0.1:5000/weather/$cityName');
+    final url = Uri.parse('$baseUrl/weather/$cityName');
     print(cityName);
     final response = await http.get(url);
 

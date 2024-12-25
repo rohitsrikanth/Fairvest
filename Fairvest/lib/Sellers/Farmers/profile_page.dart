@@ -1,8 +1,11 @@
+import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'manage_orders.dart';
 import 'package:fairvest1/Users/my_orders_page.dart';
 import 'upload_page.dart';
 import 'package:fairvest1/blog_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -18,13 +21,43 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: const FarmersProfilePage(),
+      home: FarmersProfilePage(),
     );
   }
 }
 
-class FarmersProfilePage extends StatelessWidget {
+class FarmersProfilePage extends StatefulWidget {
   const FarmersProfilePage({super.key});
+
+  @override
+  _FarmersProfilePageState createState() => _FarmersProfilePageState();
+}
+
+class _FarmersProfilePageState extends State<FarmersProfilePage> {
+  late Map<String, dynamic> userData = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDetails();
+  }
+
+  Future<void> fetchUserDetails() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/getuser1'));
+      if (response.statusCode == 200) {
+        setState(() {
+          userData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,156 +80,145 @@ class FarmersProfilePage extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Profile Section
-            Container(
-              color: Colors.green,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
               child: Column(
                 children: [
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      const CircleAvatar(
-                        radius: 50,
-                        backgroundImage:
-                            AssetImage('assets/profile_placeholder.png'),
-                      ),
-                      CircleAvatar(
-                        backgroundColor: Colors.green,
-                        radius: 15,
-                        child: IconButton(
-                          icon: const Icon(Icons.camera_alt,
-                              color: Colors.white, size: 15),
-                          onPressed: () {
-                            // Action to update profile picture
-                          },
+                  // Profile Section
+                  Container(
+                    color: Colors.green[200],
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundImage: NetworkImage(userData[
+                                  'profileImage'] ??
+                              'https://via.placeholder.com/150'), // Default placeholder if no image
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Farmer Name',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                        const SizedBox(height: 10),
+                        Text(
+                          userData['name'] ?? 'No Name',
+                          style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                        Text(
+                          'FAR-${userData['name'] ?? 'NoUsername'}',
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
                     ),
                   ),
-                  const Text(
-                    '@Farmer123',
-                    style: TextStyle(color: Colors.white70),
+                  // Location and Delivery Information
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.green),
+                        SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Weather in my area',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            Text('Kalyanpur, Kanpur'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  // Menu Options for Farmers
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.language,
+                    label: 'Language',
+                    onTap: () {
+                      // Action for Language menu
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.inventory,
+                    label: 'Manage Orders',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FarmersManageOrders()),
+                      );
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.shopping_bag,
+                    label: 'My Orders',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const MyOrdersPage()),
+                      );
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.add_circle_outline,
+                    label: 'Post Your Product',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const UploadProductApp()),
+                      );
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.cloud,
+                    label: 'Weather in My Area',
+                    onTap: () {
+                      Navigator.pushNamed(context, '/weatherhome');
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.article,
+                    label: 'Blog',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const BlogPage()),
+                      );
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.report_problem,
+                    label: 'Raise a Complaint',
+                    onTap: () {
+                      // Action for raising a complaint
+                    },
+                  ),
+                  _buildMenuOption(
+                    context,
+                    icon: Icons.star,
+                    label: 'FV Score',
+                    onTap: () {
+                      // Action for FV Score
+                    },
                   ),
                 ],
               ),
             ),
-            // Location and Delivery Information
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Icon(Icons.location_on, color: Colors.green),
-                  SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Weather in my area',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      Text('Kalyanpur, Kanpur'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const Divider(),
-            // Menu Options for Farmers
-            _buildMenuOption(
-              context,
-              icon: Icons.language,
-              label: 'Language',
-              onTap: () {
-                // Action for Language menu
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.inventory,
-              label: 'Manage Orders',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const FarmersManageOrders()),
-                );
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.shopping_bag,
-              label: 'My Orders',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MyOrdersPage()),
-                );
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.add_circle_outline,
-              label: 'Post Your Product',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const UploadProductApp()),
-                );
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.cloud,
-              label: 'Weather in My Area',
-              onTap: () {
-                Navigator.pushNamed(context, '/weatherhome');
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.article,
-              label: 'Blog',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BlogPage()),
-                );
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.report_problem,
-              label: 'Raise a Complaint',
-              onTap: () {
-                // Action for raising a complaint
-              },
-            ),
-            _buildMenuOption(
-              context,
-              icon: Icons.star,
-              label: 'FV Score',
-              onTap: () {
-                // Action for FV Score
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 

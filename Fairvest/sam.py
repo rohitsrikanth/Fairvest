@@ -1,52 +1,23 @@
-import pandas as pd
 from pymongo import MongoClient
-import random as r
 
-# MongoDB connection string
-CONNECTION_STRING = "mongodb://localhost:27017/Fairvest"
+def add_product_id_to_collection():
+    # Connect to the MongoDB server
+    client = MongoClient("mongodb://localhost:27017/")  # Replace with your connection string
+    db = client["Fairvest"]  # Replace with your database name
+    collection = db["pnc"]  # Replace with your collection name
 
-# Connect to MongoDB
-client = MongoClient(CONNECTION_STRING)
+    # Fetch all documents
+    documents = list(collection.find())
 
-# Access your database and collection
-db = client["Fairvest"]
-collection = db["sellers"]
+    # Add or update the `product_id` for each document
+    for idx, doc in enumerate(documents):
+        product_id = f"PROD-{str(idx + 1).zfill(4)}"  # Generate unique product ID
+        collection.update_one(
+            {"_id": doc["_id"]},
+            {"$set": {"product_id": product_id}}
+        )
+    
+    print("Product IDs have been successfully added or updated.")
 
-# Function to generate a random phone number
-def ph(): 
-    ph_no = [] 
-    ph_no.append(r.randint(6, 9)) 
-    for i in range(1, 10): 
-        ph_no.append(r.randint(0, 9))
-    return "".join(map(str, ph_no))
-
-# Read the CSV data
-data = pd.read_csv(r'C:\Users\91956\StudioProjects\flutter_application_1\farmers.csv')
-districts = [
-    "Thanjavur",
-    "Erode",
-    "Coimbatore",
-    "Chengalpattu",
-    "Salem",
-    "Madurai",
-    "Tiruchirappalli",
-    "Nagapattinam",
-    "Vellore",
-    "Dindigul"
-]
-
-# Iterate through the DataFrame and prepare the data for MongoDB
-for _, row in data.iterrows():
-    farmer_data = {
-        "_id": str(row["farmerid"]),
-        "name": row["farmername"],
-        "email": row["farmername"].split()[0] + str(r.randint(1000, 9999)) + "@gmail.com",
-        "phone": ph(),
-        "password": "welcome",
-        "business_type": "Farmer",
-        "location": r.choice(districts)
-    }
-    # Upsert the document into MongoDB
-    collection.update_one({"_id": farmer_data["_id"]}, {"$set": farmer_data}, upsert=True)
-
-print("Data successfully uploaded to MongoDB collection 'sellers'")
+# Call the function
+add_product_id_to_collection()
