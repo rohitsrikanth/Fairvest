@@ -66,7 +66,6 @@ class _CartPageState extends State<CartPage> {
         });
       } else {
         print("Failed to load cart items: ${response.body}");
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to load cart items.")),
         );
@@ -130,13 +129,13 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  Widget _buildProductCard(String name, String weight, String price,
-      String originalPrice, String imagePath) {
+  Widget _buildProductCard(String productId, String name, String weight,
+      String price, String originalPrice, String imagePath, int quantity) {
     return Card(
       elevation: 2.0,
       margin: const EdgeInsets.symmetric(vertical: 5.0),
       child: ListTile(
-        leading: Image.network(
+        leading: Image.asset(
           imagePath ?? 'assets/placeholder1.jpeg',
           width: 50,
           height: 50,
@@ -158,6 +157,7 @@ class _CartPageState extends State<CartPage> {
             Text("₹$originalPrice",
                 style: const TextStyle(
                     decoration: TextDecoration.lineThrough, fontSize: 12)),
+            Text("Quantity: $quantity"),
           ],
         ),
         trailing: Row(
@@ -165,11 +165,19 @@ class _CartPageState extends State<CartPage> {
           children: [
             IconButton(
                 icon: const Icon(Icons.remove, color: Colors.green),
-                onPressed: () {}),
-            const Text("1"),
+                onPressed: () {
+                  setState(() {
+                    quantity = quantity > 1 ? quantity - 1 : quantity;
+                  });
+                }),
+            Text("$quantity"),
             IconButton(
                 icon: const Icon(Icons.add, color: Colors.green),
-                onPressed: () {}),
+                onPressed: () {
+                  setState(() {
+                    quantity++;
+                  });
+                }),
           ],
         ),
       ),
@@ -189,7 +197,7 @@ class _CartPageState extends State<CartPage> {
           ),
         ],
       ),
-      body: cartItems.isEmpty
+      body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(10.0),
@@ -197,11 +205,13 @@ class _CartPageState extends State<CartPage> {
                 _buildDeliveryAddress(),
                 for (var item in cartItems)
                   _buildProductCard(
+                    item['product_id'],
                     item['name'],
                     item['weight'],
                     item['price'],
                     item['original_price'],
                     item['image_path'],
+                    item['quantity'],
                   ),
               ],
             ),
@@ -220,15 +230,15 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildSummary() {
-    // Calculate total price and savings dynamically
     double totalPrice = 0.0;
     double totalSavings = 0.0;
 
     for (var item in cartItems) {
       double price = double.parse(item['price'].toString());
       double originalPrice = double.parse(item['original_price'].toString());
-      totalPrice += price;
-      totalSavings += (originalPrice - price);
+      int quantity = item['quantity'];
+      totalPrice += price * quantity;
+      totalSavings += (originalPrice - price) * quantity;
     }
 
     return Padding(
@@ -244,7 +254,7 @@ class _CartPageState extends State<CartPage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               Text(
-                "₹${totalPrice.toStringAsFixed(2)}", // Display total price
+                "₹${totalPrice.toStringAsFixed(2)}",
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -252,7 +262,7 @@ class _CartPageState extends State<CartPage> {
           ),
           const SizedBox(height: 5),
           Text(
-            "Saved ₹${totalSavings.toStringAsFixed(2)}", // Display total savings
+            "Saved ₹${totalSavings.toStringAsFixed(2)}",
             style: const TextStyle(color: Colors.green, fontSize: 14),
           ),
         ],

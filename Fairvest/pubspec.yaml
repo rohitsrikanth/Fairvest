@@ -122,6 +122,10 @@ flutter:
     - assets/Dataset/Fresh_Vegetables/sweetpotato/
     - assets/Dataset/Fresh_Vegetables/tomato/
     - assets/Dataset/Fresh_Vegetables/turnip/
+    - assets/gpay.png
+    - assets/phonepe.png
+    - assets/paytm.png
+    - assets/bhim.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

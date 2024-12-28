@@ -2,7 +2,7 @@ import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert'; // For JSON encoding
-import 'sign_up_page_2.dart';
+import 'package:fairvest1/sellers/sign_up_page_2.dart';
 import 'login_page.dart';
 
 class SellersSignUpPage extends StatefulWidget {

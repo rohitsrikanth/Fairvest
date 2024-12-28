@@ -43,7 +43,7 @@ class _LoginPageState extends State<sLoginPage> {
           Navigator.pushNamed(context, '/foodMillOperator');
         } else if (role == 'Wholesale Seller') {
           Navigator.pushNamed(context, '/wholeSaleSellers');
-        } else if (role == 'Pesticide and Seller') {
+        } else if (role == 'Pesticide and Crop Seller') {
           Navigator.pushNamed(context, '/pesticidesSeller');
         }
       } else {

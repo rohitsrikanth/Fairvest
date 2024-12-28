@@ -1,10 +1,10 @@
-import 'package:fairvest1/Users/login_page.dart';
+import 'package:fairvest1/sellers/login_page.dart';
 import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:geocoding/geocoding.dart' as geocoding; // Alias geocoding
-import 'package:location/location.dart' as location; // Alias location
+import 'package:geocoding/geocoding.dart' as geocoding;
+import 'package:location/location.dart' as location;
 
 void main() {
   runApp(const MyApp());
@@ -39,6 +39,13 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
 
   String selectedAddressType = 'Home';
   bool showModal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Automatically fetch address when the page is loaded
+    getAddressFromLatLng();
+  }
 
   Future<void> getAddressFromLatLng() async {
     location.Location locationService = location.Location();
@@ -93,18 +100,14 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
 
   Future<void> _saveAddressDetails() async {
     final addressDetails = {
-      "address": {
-        "house": _houseController.text,
-        "apartment": _apartmentController.text,
-        "directions": _directionController.text,
-      },
+      "location": _directionController.text,
       "type": selectedAddressType,
     };
 
     print(addressDetails);
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/buyers_sign3'),
+        Uri.parse('$baseUrl/sellers_sign3'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(addressDetails),
       );
@@ -118,8 +121,15 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Text('Sign-in Successful!'),
-              content: const Center(
-                child: Icon(Icons.check_circle, color: Colors.green, size: 50),
+              content: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.8,
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
+                child: const Center(
+                  child:
+                      Icon(Icons.check_circle, color: Colors.green, size: 50),
+                ),
               ),
               actions: [
                 TextButton(
@@ -128,7 +138,7 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoginPage(),
+                        builder: (context) => const sLoginPage(),
                       ),
                     );
                   },
@@ -154,56 +164,57 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign-up Page'),
+        title: const Text('Select Address Type'),
+        backgroundColor: Colors.green,
       ),
-      backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Address Fields
-            _buildTextField(_houseController, 'House/Flat/Block-No'),
-            const SizedBox(height: 10),
-            _buildTextField(_apartmentController, 'Apartment/Road'),
-            const SizedBox(height: 10),
-            _buildTextField(_directionController, 'City, State'),
-            const SizedBox(height: 20),
-
-            // Fetch Address Button
-            ElevatedButton.icon(
-              onPressed: getAddressFromLatLng,
-              icon: const Icon(Icons.location_pin),
-              label: const Text('Use Current Location'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildTextField(_directionController, 'City, State'),
+              const SizedBox(height: 20),
+              // Wrap the row inside an Expanded to avoid overflow
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal, // Allow horizontal scrolling
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildAddressTypeButton('Farming Land', Icons.landscape),
+                    const SizedBox(width: 20),
+                    _buildAddressTypeButton('Factory', Icons.factory),
+                    const SizedBox(width: 20),
+                    _buildAddressTypeButton(
+                        'Pesticide and Crop Selling Shop', Icons.local_florist),
+                    const SizedBox(width: 20),
+                    _buildAddressTypeButton('Wholesale Sellers', Icons.store),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // Address Type
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildAddressTypeButton('Home', Icons.home),
-                const SizedBox(width: 20),
-                _buildAddressTypeButton('Office', Icons.work),
-                const SizedBox(width: 20),
-                _buildAddressTypeButton('Other', Icons.location_pin),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Save Button
-            ElevatedButton(
-              onPressed: _saveAddressDetails,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+              const SizedBox(height: 20),
+              Text(
+                'Selected: $selectedAddressType',
+                style: TextStyle(fontSize: 18, color: Colors.green),
               ),
-              child: const Text('Save', style: TextStyle(fontSize: 18)),
-            ),
-          ],
+              const SizedBox(height: 40),
+              // Save button at the bottom of the screen
+              ElevatedButton(
+                onPressed: _saveAddressDetails,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                ),
+                child: const Text(
+                  'Save Address',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

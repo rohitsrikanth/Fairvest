@@ -10,7 +10,12 @@ import os
 from flask_pymongo import PyMongo
 from bson import ObjectId  # Ensure proper handling of MongoDB ObjectId
 from urllib.parse import quote
-
+import json
+from PIL import Image
+import numpy as np
+import tensorflow as tf
+import io
+import logging
 app = Flask(__name__)
 
 # Enable CORS for all routes
@@ -26,6 +31,104 @@ client = MongoClient(CONNECTION_STRING)
 # Access your database
 db = client["Fairvest"]
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+# Set up paths
+working_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(working_dir, "assets", "model", "plant_disease_prediction_model.h5")
+class_indices_path = os.path.join(working_dir, "assets", "model", "class_indices.json")
+
+# Validate and load the pre-trained model
+if not os.path.exists(model_path):
+    raise FileNotFoundError(f"Model file not found at {model_path}")
+
+if not os.path.exists(class_indices_path):
+    raise FileNotFoundError(f"Class indices file not found at {class_indices_path}")
+
+try:
+    model = tf.keras.models.load_model(model_path, compile=False)
+    logger.info("Model loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load model: {e}")
+    raise
+
+try:
+    with open(class_indices_path, 'r') as f:
+        class_indices = json.load(f)
+    logger.info("Class indices loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load class indices: {e}")
+    raise
+
+
+# Function to load and preprocess the image
+def load_and_preprocess_image(image, target_size=(224, 224)):
+    try:
+        if isinstance(image, str):
+            if not os.path.exists(image):
+                raise FileNotFoundError(f"The file at {image} was not found.")
+            img = Image.open(image).convert('RGB')
+        else:
+            img = image.convert('RGB')
+
+        img = img.resize(target_size)
+        img_array = np.array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = img_array.astype('float32') / 255.0
+        return img_array
+    except Exception as e:
+        logger.error(f"Error in preprocessing image: {e}")
+        raise ValueError("Failed to preprocess image. Please provide a valid image file.")
+
+
+# Function to predict the class of an image
+def predict_image_class(image, model, class_indices):
+    try:
+        preprocessed_img = load_and_preprocess_image(image)
+        predictions = model.predict(preprocessed_img)
+        predicted_class_index = np.argmax(predictions, axis=1)[0]
+        predicted_class_name = class_indices[str(predicted_class_index)]
+        return predicted_class_name
+    except Exception as e:
+        logger.error(f"Prediction failed: {e}")
+        raise
+
+
+# API Endpoint for prediction
+@app.route('/predict', methods=['POST'])
+def predict_endpoint():
+    if 'image' not in request.files:
+        return jsonify({"error": "No image file provided. Please upload an image."}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({"error": "No file selected. Please upload a valid image file."}), 400
+
+    if not file.filename.lower().endswith(('png', 'jpg', 'jpeg')):
+        return jsonify({"error": "Unsupported file type. Please upload PNG, JPG, or JPEG files."}), 400
+
+    try:
+        # Open the uploaded image
+        image = Image.open(io.BytesIO(file.read()))
+        
+        # Perform prediction
+        prediction = predict_image_class(image, model, class_indices)
+        
+        # Create response
+        response = {
+            "prediction": prediction
+        }
+        return jsonify(response), 200
+    except Exception as e:
+        logger.error(f"Error during prediction: {e}")
+        return jsonify({"error": "An error occurred during prediction. Please try again."}), 500
+    
 # Function to check if collection exists, and if not, create it
 def ensure_collection_exists(collection_name):
     if collection_name not in db.list_collection_names():
@@ -171,17 +274,52 @@ def add_to_cart():
     if not user_name or not product_id:
         return jsonify({"error": "Invalid input"}), 400
 
-    # Find the user and update their cart
-    result = buyers_collection.update_one(
-        {"name": user_name},
-        {"$addToSet": {"cart": product_id}},  # Use `$addToSet` to avoid duplicate entries
-        upsert=True  # Create the user if they don't exist
-    )
+    user = buyers_collection.find_one({"name": user_name})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    if result.modified_count > 0 or result.upserted_id:
+    cart_item = next((item for item in user.get("cart", []) if item["product_id"] == product_id), None)
+    if cart_item:
+        # Update the quantity if the product is already in the cart
+        result = buyers_collection.update_one(
+            {"name": user_name, "cart.product_id": product_id},
+            {"$inc": {"cart.$.quantity": 1}}
+        )
+    else:
+        # Add the product to the cart
+        result = buyers_collection.update_one(
+            {"name": user_name},
+            {"$push": {"cart": {"product_id": product_id, "quantity": 1}}}
+        )
+
+    if result.modified_count > 0:
         return jsonify({"message": "Product added to cart successfully"}), 200
     else:
         return jsonify({"error": "Failed to add product to cart"}), 500
+
+
+@app.route('/search', methods=['GET'])
+def search_products():
+    query = request.args.get('q', '')  # Get search query from the URL parameter
+    if not query:
+        return jsonify({'error': 'No search query provided'}), 400
+
+    # Search for products matching the query (case-insensitive)
+    products = uploads_collection.find(
+    {
+        'productname': {'$regex': query, '$options': 'i'}  # Regex search (case-insensitive)
+    },
+    {
+        '_id': 0  # Exclude the _id field from the results
+    }
+)
+
+    # Convert products cursor to a list and format it for the response
+    products_list = []
+    for product in products:
+        products_list.append(product)
+    print(products_list)
+    return jsonify({'products': products_list})
 
 @app.route('/get_cart', methods=['GET'])
 def get_cart():
@@ -192,12 +330,11 @@ def get_cart():
     
     # Fetch user document from the buyers or sellers collection
     user = buyers_collection.find_one({"name": user_name}) or sellers_collection.find_one({"name": user_name})
-    
     if not user or "cart" not in user:
         return jsonify({"error": "No cart found for the user"}), 404
-
-    # Fetch product details for the cart items
-    cart_product_ids = user["cart"]
+    
+    cart_items = user["cart"]
+    cart_product_ids = [item["product_id"] for item in cart_items]
     print(cart_product_ids)
     
     # Try fetching from the first collection
@@ -211,20 +348,24 @@ def get_cart():
     
     if not product_list:
         return jsonify({"error": "No products found for the user's cart"}), 404
-
-    # Prepare the product list
+    
+    # Map product details with quantity
     response_products = []
     for product in product_list:
+        quantity = next(item["quantity"] for item in cart_items if item["product_id"] == product["productid"])
         response_products.append({
+            "product_id": product.get("productid"),
             "name": product.get("productname"),
             "weight": str(product.get("quantity")),
             "price": str(product.get("discountedprice")),
             "original_price": str(product.get("price")),
-            "image_path": product.get("image_path")
+            "image_path": product.get("image_path"),
+            "quantity": quantity
         })
-
+    
     print(response_products)
     return jsonify({"cart": response_products}), 200
+
 
 # Route to create a seller
 @app.route("/sellers_sign1", methods=["POST"])
@@ -240,10 +381,42 @@ def create_seller():
         return jsonify({"error": "Passwords do not match"}), 400
 
     data.pop("retype_password", None)  # Remove retype_password field
-    data['_id'] = "FAR-"+data["name"]
-    sellers_collection.insert_one(data)
+    user_role = data['business_type']
+    if user_role == "Farmer" :
+        data['_id'] = "FAR-"  + data["name"]
+    elif user_role == "Food Mill Operator":
+        data['_id'] = "FMO-" + data["name"]
+    elif user_role == "Wholesale Seller":
+        data['_id'] = "WHS-" + data["name"]
+    elif user_role == "Pesticide and Crop Seller":
+        data['_id'] = "PNC-" + data["name"]
+    seller_data.update(data)
     return jsonify({"message": "Seller created successfully"}), 201
 
+@app.route("/sellers_sign3", methods=["POST"])
+def signup2():
+    global seller_data
+    try:
+        # Get data from the request for step 3
+        step3_data = request.json
+        if not step3_data:
+            return jsonify({"error": "Invalid data"}), 400
+
+        # Update global buyer_data with step 3 details
+        seller_data.update(step3_data)
+        print("Final buyer_data (after sign3):", seller_data)
+
+        # Validate the combined data
+        #required_fields = ["name", "email", "phone", "password", "address", "type"]
+        #missing_fields = [field for field in required_fields if field not in buyer_data]
+        #if missing_fields:
+            #return jsonify({"error": f"Missing fields: {', '.join(missing_fields)}"}), 400
+        sellers_collection.insert_one(seller_data)
+        return jsonify({"message": "User details saved successfully!"}), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+        
 @app.route("/sellers_login", methods=["POST"])
 def sellers_login():
     global user_name,seller_data,user_id
@@ -316,7 +489,7 @@ def get_user1():
         user_data = sellers_collection.find_one({"name": seller_data.get('name')})
         if user_data:
             # Remove the '_id' field if you don't want to expose it
-            user_data.pop('_id', None)
+            # user_data.pop('_id', None)
             return jsonify(user_data), 200
         else:
             return jsonify({"error": "User not found"}), 404
@@ -701,7 +874,6 @@ def delete_farmer(farmer_id):
         return jsonify({'message': 'Farmer deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
-
 
 
 # Upload folder configuration

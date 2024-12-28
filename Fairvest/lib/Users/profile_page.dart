@@ -3,7 +3,6 @@ import 'package:fairvest1/Sellers/Farmers/chat_bot.dart';
 import 'package:fairvest1/Users/cart_page.dart';
 import 'package:fairvest1/Users/home_page.dart';
 import 'package:fairvest1/Users/my_orders_page.dart';
-import 'package:fairvest1/blog_page.dart';
 import 'package:fairvest1/constants.dart';
 import 'package:fairvest1/widget/custom_drawer.dart';
 import 'package:flutter/material.dart';
@@ -204,18 +203,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const CartPage()),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.article, color: Colors.black),
-                    title: const Text('Blog', style: TextStyle(fontSize: 18)),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const BlogPage()),
                       );
                     },
                   ),

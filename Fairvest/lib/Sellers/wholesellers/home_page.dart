@@ -1,4 +1,9 @@
+import 'package:fairvest1/Users/home_page.dart';
+import 'package:fairvest1/constants.dart';
+import 'package:fairvest1/sellers/profile_page.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -9,15 +14,45 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: WholeSellesHomePage(),
     );
   }
 }
 
-class WholeSellesHomePage extends StatelessWidget {
+class WholeSellesHomePage extends StatefulWidget {
   const WholeSellesHomePage({super.key});
+
+  @override
+  _WholeSellesHomePageState createState() => _WholeSellesHomePageState();
+}
+
+class _WholeSellesHomePageState extends State<WholeSellesHomePage> {
+  Map<String, dynamic> userData = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDetails();
+  }
+
+  Future<void> fetchUserDetails() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/getuser1'));
+      if (response.statusCode == 200) {
+        setState(() {
+          userData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +62,18 @@ class WholeSellesHomePage extends StatelessWidget {
         leading: const Padding(
           padding: EdgeInsets.all(8.0),
           child: CircleAvatar(
-            backgroundImage: AssetImage('assets/logo.png'), // Replace with your logo
+            backgroundImage: AssetImage('assets/fairvest_logo.png'),
           ),
         ),
         title: const Text('Fairvest'),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => FarmersProfilePage()),
+              );
+            },
             icon: const Icon(Icons.person),
           ),
         ],
@@ -43,14 +83,16 @@ class WholeSellesHomePage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '"Welcome back, [WHolesale Sellers Shop Owner’s Name]!\nHere\'s an overview of your business."',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.left,
-            ),
+            isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Text(
+                    'Welcome back, ${userData['name']}!\nHere\'s an overview of your business.',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
             const SizedBox(height: 20),
             Expanded(
               child: ListView(
@@ -83,6 +125,18 @@ class WholeSellesHomePage extends StatelessWidget {
                     icon: Icons.bar_chart,
                     label: 'Revenue summary',
                     onPressed: () {},
+                  ),
+                  const SizedBox(height: 10),
+                  _buildCustomButton(
+                    icon: Icons.shop_outlined,
+                    label: 'Buy Now',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FairvestHomePage()),
+                      );
+                    },
                   ),
                 ],
               ),

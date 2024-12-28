@@ -1,4 +1,8 @@
+import 'package:fairvest1/Sellers/profile_page.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:fairvest1/constants.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,25 +20,51 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class FoodMillOperatorPage extends StatelessWidget {
+class FoodMillOperatorPage extends StatefulWidget {
   const FoodMillOperatorPage({super.key});
+
+  @override
+  _FoodMillOperatorPageState createState() => _FoodMillOperatorPageState();
+}
+
+class _FoodMillOperatorPageState extends State<FoodMillOperatorPage> {
+  Map<String, dynamic> userData = {};
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDetails();
+  }
+
+  Future<void> fetchUserDetails() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/getuser1'));
+      if (response.statusCode == 200) {
+        setState(() {
+          userData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
-        leading: const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Icon(
-            Icons.access_time,
-            color: Colors.white,
-          ),
-        ),
+        // leading: const Padding(
+        //   padding: EdgeInsets.all(8.0),
+        // ),
         title: Row(
           children: [
             Image.asset(
-              'assets/logo.png', // Replace with your logo image
+              'assets/fairvest_logo.png', // Replace with your logo image
               height: 40,
             ),
             const SizedBox(width: 8),
@@ -44,13 +74,23 @@ class FoodMillOperatorPage extends StatelessWidget {
             ),
           ],
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Icon(
-              Icons.account_circle,
-              color: Colors.white,
-              size: 28,
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(
+                Icons.account_circle,
+                color: Colors.white,
+                size: 28,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FarmersProfilePage(),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -61,15 +101,17 @@ class FoodMillOperatorPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Welcome Message
-            const Text(
-              '“Welcome back, [Mill Owner’s Name]! Here\'s an overview of your business.”',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
+            isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Text(
+                    '“Welcome back, ${userData['name']}! Here\'s an overview of your business.”',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
             const SizedBox(height: 40),
 
             // Menu Items
@@ -108,7 +150,8 @@ class MenuItem extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const MenuItem({super.key, 
+  const MenuItem({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,

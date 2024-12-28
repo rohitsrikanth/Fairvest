@@ -1,5 +1,5 @@
-import 'package:fairvest1/Sellers/Farmers/prediction.dart';
 import 'package:fairvest1/constants.dart';
+import 'package:fairvest1/weather_home_page.dart';
 import 'package:flutter/material.dart';
 import 'manage_orders.dart';
 import 'package:fairvest1/Users/my_orders_page.dart';
@@ -51,6 +51,7 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
           userData = jsonDecode(response.body);
           isLoading = false;
         });
+        print(userData);
       } else {
         throw Exception('Failed to fetch user details');
       }
@@ -113,9 +114,29 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                       ],
                     ),
                   ),
-
+                  // Location and Delivery Information
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.green),
+                        SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Weather in my area',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            Text('Kalyanpur, Kanpur'),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
                   // Menu Options for Farmers
-
                   _buildMenuOption(
                     context,
                     icon: Icons.inventory,
@@ -125,18 +146,6 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const FarmersManageOrders()),
-                      );
-                    },
-                  ),
-                  _buildMenuOption(
-                    context,
-                    icon: Icons.shopping_bag,
-                    label: 'My Orders',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const MyOrdersPage()),
                       );
                     },
                   ),
@@ -157,21 +166,14 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                     icon: Icons.cloud,
                     label: 'Weather in My Area',
                     onTap: () {
-                      Navigator.pushNamed(context, '/weatherhome');
-                    },
-                  ),
-                  _buildMenuOption(
-                    context,
-                    icon: Icons.online_prediction_rounded,
-                    label: 'Check Plant health',
-                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => ImagePredictionPage()),
+                            builder: (context) => const WeatherScreen()),
                       );
                     },
                   ),
+
                   _buildMenuOption(
                     context,
                     icon: Icons.report_problem,

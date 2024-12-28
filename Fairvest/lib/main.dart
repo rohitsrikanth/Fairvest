@@ -17,7 +17,7 @@ import 'centers/screens/product_management.dart';
 import 'centers/screens/reports.dart';
 import 'centers/screens/settings.dart';
 import 'centers/screens/support.dart';
-import 'weather_detail_page.dart';
+// import 'weather_detail_page.dart';
 import 'weather_home_page.dart';
 
 void main() {

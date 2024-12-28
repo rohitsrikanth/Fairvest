@@ -1,6 +1,8 @@
 import 'package:fairvest1/Sellers/Farmers/chat_bot.dart';
 import 'package:fairvest1/Users/cart_page.dart';
 import 'package:fairvest1/Users/profile_page.dart';
+import 'package:fairvest1/product_detail_page.dart';
+import 'package:fairvest1/search_page.dart';
 import 'package:fairvest1/widget/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -213,11 +215,10 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner), label: 'Scanner'),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
         BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
         BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
+        //BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
       ],
       onTap: (index) {
         if (_currentIndex != index) {
@@ -232,8 +233,8 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
                   MaterialPageRoute(builder: (_) => const ProfilePage()));
               break;
             case 2:
-              Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => const CartPage()));
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (_) => const SearchPage()));
               break;
             case 3:
               Navigator.pushReplacement(
@@ -330,62 +331,74 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
 
   // Featured Product Item Renderer
   Widget _buildFeaturedProductItem(Map<String, dynamic> product) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[200],
-      ),
-      child: Column(
-        children: [
-          Image.asset(
-            product['image_path'] ??
-                'assets/Dataset/Fruits and Berries/pomegranate/Image_9.jpg',
-            height: 70,
-            width: 130,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              debugPrint('Error loading image: ${product['image_path']}');
-              return Image.asset(
-                'assets/Dataset/Fruits and Berries/pomegranate/Image_9.jpg',
-                height: 70,
-                width: 130,
-              );
-            },
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailPage(
+              product: product,
+            ),
           ),
-          const SizedBox(height: 2),
-          Padding(
-            padding: const EdgeInsets.all(3.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    product['productname'] ?? 'Product Name',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+        );
+      },
+      child: Container(
+        width: 150,
+        margin: const EdgeInsets.only(right: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.grey[200],
+        ),
+        child: Column(
+          children: [
+            Image.asset(
+              product['image_path'] ??
+                  'assets/Dataset/Fruits and Berries/pomegranate/Image_9.jpg',
+              height: 70,
+              width: 130,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Error loading image: ${product['image_path']}');
+                return Image.asset(
+                  'assets/Dataset/Fruits and Berries/pomegranate/Image_9.jpg',
+                  height: 70,
+                  width: 130,
+                );
+              },
+            ),
+            const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.all(3.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      product['productname'] ?? 'Product Name',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
-                Text(
-                  '${product['discountedprice'] ?? 0.0}',
-                  style: const TextStyle(color: Colors.green),
-                ),
-              ],
-            ),
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 3.0),
-            child: ElevatedButton(
-              onPressed: () => addToCart(product['productid']),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                  Text(
+                    '${product['discountedprice'] ?? 0.0}',
+                    style: const TextStyle(color: Colors.green),
+                  ),
+                ],
               ),
-              child: const Text('Add to Cart'),
             ),
-          ),
-        ],
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3.0),
+              child: ElevatedButton(
+                onPressed: () => addToCart(product['productid']),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                ),
+                child: const Text('Add to Cart'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -429,7 +442,7 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const FruitsAndVegetablesPage()),
+                        builder: (_) => FruitsAndVegetablesPage()),
                   );
                 },
               );
