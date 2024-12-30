@@ -10,12 +10,15 @@ import os
 from flask_pymongo import PyMongo
 from bson import ObjectId  # Ensure proper handling of MongoDB ObjectId
 from urllib.parse import quote
+import requests
 import json
 from PIL import Image
 import numpy as np
 import tensorflow as tf
 import io
 import logging
+from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
+
 app = Flask(__name__)
 
 # Enable CORS for all routes
@@ -25,6 +28,70 @@ user_name = ""
 seller_data ={}
 user_id=""
 # Replace Atlas connection string with the localhost connection for MongoDB Community Edition
+
+# Retrieve API key from environment variables
+GOOEY_API_KEY = "sk-mDh5agIgaFIsKL5bljdb1WAixSSc2rokstxWR3Qm5FBMJaRg"
+
+if not GOOEY_API_KEY:
+    raise ValueError("API Key is missing. Please set GOOEY_API_KEY in environment variables.")
+
+cache_dir = r"C:/Users\91956/.cache/huggingface/hub/models--facebook--bart-large-mnli"
+classifier = pipeline( "zero-shot-classification", 
+                      model=AutoModelForSequenceClassification.from_pretrained("facebook/bart-large-mnli", cache_dir=cache_dir), 
+                      tokenizer=AutoTokenizer.from_pretrained("facebook/bart-large-mnli", cache_dir=cache_dir))
+
+def is_farming_related(prompt): 
+    labels = ["farming", "agriculture", "crops"] 
+    result = classifier(prompt, labels) 
+    print(result["scores"])
+    return max(result["scores"]) > 0.4
+
+def req(prompt):
+    payload = {
+        "input_prompt": prompt
+    }
+    if is_farming_related(prompt): 
+        try:
+            response = requests.post(
+            "https://api.gooey.ai/v2/video-bots",
+            headers={
+                "Authorization": f"bearer {GOOEY_API_KEY}",
+            },
+            json=payload,
+            )
+
+        # Ensure the request was successful
+            response.raise_for_status()
+
+            result = response.json()
+            output_text = result.get("output", {}).get("output_text", "No output found.")
+            print(output_text)
+            return output_text
+
+        except requests.exceptions.RequestException as e:
+            print(f"Request failed: {e}")
+            return "There was an error with the request."
+
+    else: 
+        response = {"response": "This API only responds to farming-related queries. Please ask a farming-related question."}
+        
+        return response
+    
+
+@app.route('/ask', methods=['POST'])
+def ask():
+    data = request.json
+    question = data.get('question')
+    
+    if not question:
+        return jsonify({"error": "Question is required."}), 400
+    print(question)
+    # Process the question and generate a response
+    response_text = req(question)
+    print(response_text)
+    # Return the response
+    return jsonify({"response": response_text})
+
 CONNECTION_STRING = "mongodb://localhost:27017/Fairvest"  # Default local MongoDB URI
 client = MongoClient(CONNECTION_STRING)
 
@@ -321,6 +388,29 @@ def search_products():
     print(products_list)
     return jsonify({'products': products_list})
 
+@app.route('/search1', methods=['GET'])
+def search_product():
+    query = request.args.get('q', '')  # Get search query from the URL parameter
+    if not query:
+        return jsonify({'error': 'No search query provided'}), 400
+
+    # Search for products matching the query (case-insensitive)
+    products = pnc_collection.find(
+    {
+        'productname': {'$regex': query, '$options': 'i'}  # Regex search (case-insensitive)
+    },
+    {
+        '_id': 0  # Exclude the _id field from the results
+    }
+)
+
+    # Convert products cursor to a list and format it for the response
+    products_list = []
+    for product in products:
+        products_list.append(product)
+    print(products_list)
+    return jsonify({'products': products_list})
+
 @app.route('/get_cart', methods=['GET'])
 def get_cart():
     user_name = request.args.get("user_name")
@@ -341,31 +431,38 @@ def get_cart():
     products_cursor = uploads_collection.find({"productid": {"$in": cart_product_ids}})
     product_list = list(products_cursor)
     
-    # If no products found, try the fallback collection
+    # If no products found in the first collection, try the fallback collection
     if not product_list:
         products_cursor = pnc_collection.find({"product_id": {"$in": cart_product_ids}})
         product_list = list(products_cursor)
     
+    # If still no products found, return an error
     if not product_list:
         return jsonify({"error": "No products found for the user's cart"}), 404
     
     # Map product details with quantity
     response_products = []
-    for product in product_list:
-        quantity = next(item["quantity"] for item in cart_items if item["product_id"] == product["productid"])
-        response_products.append({
-            "product_id": product.get("productid"),
-            "name": product.get("productname"),
-            "weight": str(product.get("quantity")),
-            "price": str(product.get("discountedprice")),
-            "original_price": str(product.get("price")),
-            "image_path": product.get("image_path"),
-            "quantity": quantity
-        })
+    for item in cart_items:
+        product_id = item["product_id"]
+        # Check both product_id and productid in the product_list
+        product = next((p for p in product_list if p.get("product_id") == product_id or p.get("productid") == product_id), None)
+        if product:
+            response_products.append({
+                "product_id": product.get("productid",product.get("product_id")),
+                "name": product.get("productname"),
+                "weight": str(product.get("quantity")),
+                "price": str(product.get("discountedprice")),
+                "original_price": str(product.get("price")),
+                "image_path": product.get("image_path"),
+                "quantity": item["quantity"]
+            })
     
+    # If no products were matched, return an error
+    if not response_products:
+        return jsonify({"error": "No matching products found for the user's cart"}), 404
+
     print(response_products)
     return jsonify({"cart": response_products}), 200
-
 
 # Route to create a seller
 @app.route("/sellers_sign1", methods=["POST"])
@@ -457,27 +554,45 @@ def sellers_login():
 @app.route('/add_to_cart1', methods=['POST'])
 def add_to_cart1():
     data = request.json
-    farmer_id = data.get('farmer_id')
-    product_id = data.get('product_id')
-    print(farmer_id,product_id)
+    farmer_id = data.get("farmer_id")
+    product_id = data.get("product_id")
+    
     if not farmer_id or not product_id:
-        return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+        return jsonify({"error": "Invalid input"}), 400
 
-    # Update the cart in the database
-    farmer_cart = sellers_collection.find_one({'name': farmer_id})
+    farmer_cart = sellers_collection.find_one({"name": farmer_id})
     if not farmer_cart:
-        sellers_collection.insert_one({'farmer_id': farmer_id, 'cart': [product_id]})
+        return jsonify({"error": "Farmer not found"}), 404
+
+    cart_item = next((item for item in farmer_cart.get("cart", []) if item["product_id"] == product_id), None)
+    if cart_item:
+        # Update the quantity if the product is already in the cart
+        result = sellers_collection.update_one(
+            {"name": farmer_id, "cart.product_id": product_id},
+            {"$inc": {"cart.$.quantity": 1}}
+        )
     else:
-        sellers_collection.update_one(
-            {'name': farmer_id},
-            {'$addToSet': {'cart': product_id}}  # Ensures no duplicate product IDs
+        # Add the product to the cart
+        result = sellers_collection.update_one(
+            {"name": farmer_id},
+            {"$push": {"cart": {"product_id": product_id, "quantity": 1}}}
         )
 
-    return jsonify({'success': True, 'message': 'Product added to cart'}), 200
+    if result.modified_count > 0:
+        return jsonify({"message": "Product added to cart successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to add product to cart"}), 500
 
-@app.route('/products', methods=['GET'])
+@app.route('/products1', methods=['GET'])
 def get_products1():
     products = list(pnc_collection.find({}, {'_id': 0}))  # Exclude the '_id' field
+    return jsonify(products)
+
+@app.route('/products200/<cat>', methods=['GET'])
+def get_products2(cat):
+    print(cat)
+    products = list(uploads_collection.find({"category" : cat}, {'_id': 0}))  # Exclude the '_id' field
+    print(products)
     return jsonify(products)
 
 @app.route('/getuser1', methods=['GET'])
@@ -730,6 +845,101 @@ def upload_product():
         print(f"An error occurred: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/upload-product1', methods=['POST'])
+def upload_product1():
+    global seller_data
+    print(seller_data)
+    
+    try:
+        # Configure the upload folder and allowed extensions
+        UPLOAD_FOLDER = 'assets/uploads'
+        ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+        app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+        # Create the upload folder if it doesn't exist
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(UPLOAD_FOLDER)
+
+        # Get form data
+        description = request.form.get('description')
+        name = request.form.get('product_name')
+        units = request.form.get('units')
+        date = request.form.get('date')
+        category = request.form.get('category')
+        price = request.form.get('price_per_unit')
+        image = request.files.get('image')
+
+        # Validate the inputs
+        if not description or not units or not date or not image or not category or not price or not name:
+            return jsonify({"error": "All fields are required!"}), 400
+
+        # Function to check if the uploaded file is allowed
+        def allowed_file(filename):
+            return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+        # Validate the image
+        if not allowed_file(image.filename):
+            return jsonify({"error": "Invalid image format!"}), 400
+
+        # Secure the image file name
+        filename = secure_filename(image.filename)
+
+        # Save the image to the upload folder
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
+        
+        # Convert date to a datetime object
+        try:
+            selected_date = datetime.strptime(date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({"error": "Invalid date format! Use YYYY-MM-DD."}), 400
+
+        # Prepare product data
+        product_data = {
+            "productid": seller_data['name'] + str(len(sellers_collection.find_one({"name": seller_data["name"]}).get("products", []))),
+            "productname": name,
+            "farmerid": "FAR-" + seller_data.get("name"),
+            "farmername": seller_data.get("name"),
+            "price": price,
+            "description": description,
+            "quantity": units,
+            "date": selected_date.strftime('%Y-%m-%d'),
+            "image_path": image_path,
+            "category": category.replace(' ', '_')
+        }
+
+        # Insert product data into the uploads collection
+        pnc_collection.insert_one(product_data)
+        image.save(image_path)
+
+        # Function to update seller with product
+        def update_seller_with_product(seller_id, product_id):
+            seller = sellers_collection.find_one({"name": seller_id})
+            if seller:
+                if "products" in seller:
+                    if product_id not in seller["products"]:
+                        sellers_collection.update_one(
+                            {"name": seller_id},
+                            {"$push": {"products": product_id}}
+                        )
+                else:
+                    sellers_collection.update_one(
+                        {"name": seller_id},
+                        {"$set": {"products": [product_id]}}
+                    )
+            else:
+                sellers_collection.insert_one({"name": seller_id, "products": [product_id]})
+
+        # Update seller with product
+        update_seller_with_product(seller_data["name"], product_data["productid"])
+        product_data.pop("_id")
+        print("Received Product Data:", product_data)
+        return jsonify({"message": "Product uploaded successfully!", "product": product_data}), 200
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/manage-products', methods=['GET'])
 def manage_products():
@@ -743,14 +953,20 @@ def manage_products():
     try:
         # Fetch seller data using the seller_id
         seller_data = sellers_collection.find_one({"_id": seller_id})
-        if not seller_data or "products" not in seller_data:
+        print(seller_data.keys())
+        if  not seller_data or "products" not in seller_data.keys():
             return jsonify([])  # Return empty list if no products found
 
         product_ids = seller_data["products"]  # List of product IDs
-
+        print(product_ids)
         # Fetch product details from the uploads collection
-        products = list(uploads_collection.find({"productid": {"$in": product_ids}}))
+        products_cursor = uploads_collection.find({"productid": {"$in": product_ids}})
+        product_list = list(products_cursor)
 
+# If no products are found, try fetching from pnc_collection
+        if not product_list:
+            products_cursor = pnc_collection.find({"productid": {"$in": product_ids}})
+            product_list = list(products_cursor)
         # Transform MongoDB documents into JSON-serializable format
         result = [
             {
@@ -759,7 +975,7 @@ def manage_products():
                 "subtitle": product["description"],
                 "units": product["quantity"],
             }
-            for product in products
+            for product in product_list
         ]
         print(result)
         return jsonify(result)

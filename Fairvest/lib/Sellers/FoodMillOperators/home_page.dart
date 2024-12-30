@@ -45,6 +45,7 @@ class _FoodMillOperatorPageState extends State<FoodMillOperatorPage> {
           userData = jsonDecode(response.body);
           isLoading = false;
         });
+        print(userData);
       } else {
         throw Exception('Failed to fetch user details');
       }

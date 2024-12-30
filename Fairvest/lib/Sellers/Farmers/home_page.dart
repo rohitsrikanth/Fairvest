@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:fairvest1/Sellers/Farmers/chat_bot.dart';
 import 'package:fairvest1/Sellers/Farmers/profile_page.dart';
 import 'package:fairvest1/Users/cart_page.dart';
 import 'package:fairvest1/constants.dart';
+import 'package:fairvest1/search_page.dart';
+import 'package:fairvest1/widget/custom_drawer.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
@@ -16,6 +19,7 @@ class _FarmersHomePageState extends State<FarmersHomePage> {
   late Future<List<dynamic>> _products;
   String farmer = "";
   late Map<String, dynamic> userData = {};
+  int _currentIndex = 0; // This is defined here, so it should be accessible
 
   @override
   void initState() {
@@ -25,7 +29,7 @@ class _FarmersHomePageState extends State<FarmersHomePage> {
 
   Future<List<dynamic>> fetchProducts() async {
     final response =
-        await http.get(Uri.parse('$baseUrl/products')); // Flask API URL
+        await http.get(Uri.parse('$baseUrl/products1')); // Flask API URL
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -132,6 +136,50 @@ class _FarmersHomePageState extends State<FarmersHomePage> {
             },
           );
         },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex:
+            _currentIndex, // This will bind the _currentIndex correctly
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart), label: 'Cart'),
+          //BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
+        ],
+        onTap: (index) {
+          if (_currentIndex != index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            switch (index) {
+              case 0:
+                break;
+              case 1:
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const FarmersProfilePage()));
+                break;
+              case 2:
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (_) => const SearchPage()));
+                break;
+              case 3:
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (_) => const CartPage()));
+                break;
+              case 4:
+                Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (_) => ChatBotPage()));
+                break;
+            }
+          }
+        },
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
       ),
     );
   }

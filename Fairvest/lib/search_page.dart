@@ -16,9 +16,37 @@ class _SearchPageState extends State<SearchPage> {
   List<dynamic> _searchResults = [];
   bool _isLoading = false;
   String _errorMessage = '';
-
+  late Map<String, dynamic> userData = {};
+  bool isLoading = true;
+  String userName = "";
   // Function to perform search request to Flask backend
   Future<void> _searchProducts() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/getuser'));
+      if (response.statusCode == 200) {
+        setState(() {
+          userData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      try {
+        final response = await http.get(Uri.parse('$baseUrl/getuser1'));
+        if (response.statusCode == 200) {
+          setState(() {
+            userData = jsonDecode(response.body);
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Failed to fetch user details');
+        }
+      } catch (e) {
+        print('Error fetching user details: $e');
+      }
+    }
+
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
 
@@ -29,8 +57,9 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     try {
+      final String endpoint = userData['_id'] != null ? 'search1' : 'search';
       final response = await http.get(
-        Uri.parse('$baseUrl/search?q=$query'),
+        Uri.parse('$baseUrl/$endpoint?q=$query'),
       );
 
       if (response.statusCode == 200) {
@@ -89,7 +118,13 @@ class _SearchPageState extends State<SearchPage> {
                             return ListTile(
                               title: Text(product['productname'] ?? 'No Name'),
                               subtitle: Text('${product['price']}'),
-                              leading: Image.asset(product['image_path']),
+                              leading: Image.asset(
+                                  product['image_path'] ??
+                                      'assets/placeholder1.jpeg',
+                                  errorBuilder: (BuildContext context,
+                                      Object error, StackTrace? stackTrace) {
+                                return Image.asset('assets/placeholder1.jpeg');
+                              }),
                               onTap: () {
                                 // Navigate to product detail page and pass the product data
                                 Navigator.push(

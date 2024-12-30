@@ -3,6 +3,7 @@ import 'package:fairvest1/Users/cart_page.dart';
 import 'package:fairvest1/Users/profile_page.dart';
 import 'package:fairvest1/search_page.dart';
 import 'package:fairvest1/widget/custom_drawer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -23,13 +24,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: FruitsAndVegetablesPage(),
+      home: FruitsAndVegetablesPage(category: 'S'),
     );
   }
 }
 
 class FruitsAndVegetablesPage extends StatefulWidget {
-  const FruitsAndVegetablesPage({super.key});
+  final String category;
+  FruitsAndVegetablesPage({required this.category});
 
   @override
   _FruitsAndVegetablesPageState createState() =>
@@ -95,8 +97,8 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
   }
 
   Future<List<dynamic>> fetchProducts() async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/products')); // Flask API URL
+    final response = await http.get(
+        Uri.parse('$baseUrl/products200/${widget.category}')); // Flask API URL
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -157,12 +159,12 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back, color: Colors.white),
+        //   onPressed: () {
+        //     Navigator.pop(context);
+        //   },
+        // ),
         title: Row(
           children: [
             Image.asset('assets/fairvest_logo.png', height: 40),
@@ -171,50 +173,50 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
                 style: TextStyle(fontSize: 24, color: Colors.white)),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {},
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
-          child: Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    Icon(Icons.local_shipping, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Get it in 1 day*',
-                        style: TextStyle(color: Colors.white)),
-                    Spacer(),
-                    Text('Kalyanpur, Kanpur',
-                        style: TextStyle(color: Colors.white)),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      icon: Icon(Icons.search),
-                      hintText: 'Search products',
-                      border: InputBorder.none,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.shopping_cart),
+        //     onPressed: () {},
+        //   ),
+        // ],
+        // bottom: PreferredSize(
+        //   preferredSize: const Size.fromHeight(70),
+        //   child: Column(
+        //     children: [
+        //       const Padding(
+        //         padding: EdgeInsets.symmetric(horizontal: 16.0),
+        //         child: Row(
+        //           children: [
+        //             Icon(Icons.local_shipping, color: Colors.white),
+        //             SizedBox(width: 8),
+        //             Text('Get it in 1 day*',
+        //                 style: TextStyle(color: Colors.white)),
+        //             Spacer(),
+        //             Text('Kalyanpur, Kanpur',
+        //                 style: TextStyle(color: Colors.white)),
+        //           ],
+        //         ),
+        //       ),
+        //       Padding(
+        //         padding: const EdgeInsets.all(8.0),
+        //         child: Container(
+        //           padding: const EdgeInsets.symmetric(horizontal: 12),
+        //           decoration: BoxDecoration(
+        //             color: Colors.white,
+        //             borderRadius: BorderRadius.circular(20),
+        //           ),
+        //           child: const TextField(
+        //             decoration: InputDecoration(
+        //               icon: Icon(Icons.search),
+        //               hintText: 'Search products',
+        //               border: InputBorder.none,
+        //             ),
+        //           ),
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
       ),
       body: _buildBody(),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -226,13 +228,13 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
-          _buildFeaturedSection(
-              "Top Offers", "Just in time for you!", 'top_offers'),
-          _buildFeaturedSection("All Time Favorites", "Your favorites await!",
-              'all_time_favorites'),
-          _buildFeaturedSection("Trending Now",
-              "What everyone is talking about!", 'trending_now'),
+          // const SizedBox(height: 20),
+          // _buildFeaturedSection(
+          //     "Top Offers", "Just in time for you!", 'top_offers'),
+          // _buildFeaturedSection("All Time Favorites", "Your favorites await!",
+          //     'all_time_favorites'),
+          // _buildFeaturedSection("Trending Now",
+          //     "What everyone is talking about!", 'trending_now'),
           FutureBuilder<List<dynamic>>(
             future: _products,
             builder: (context, snapshot) {
@@ -246,7 +248,7 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
 
               final products = snapshot.data!;
               return SizedBox(
-                height: 300, // Set a fixed height for the ListView
+                height: 750, // Set a fixed height for the ListView
                 child: ListView.builder(
                   itemCount: products.length,
                   itemBuilder: (context, index) {
@@ -264,7 +266,6 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
               );
             },
           ),
-          const SizedBox(height: 16),
         ],
       ),
     );
@@ -416,7 +417,7 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
               break;
             case 5:
               Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => OpenUrlPage()));
+                  context, MaterialPageRoute(builder: (_) => ChatBotPage()));
               break;
           }
         }

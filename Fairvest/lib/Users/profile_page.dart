@@ -263,7 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
               break;
             case 5:
               Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => OpenUrlPage()));
+                  context, MaterialPageRoute(builder: (_) => ChatBotPage()));
               break;
           }
         }

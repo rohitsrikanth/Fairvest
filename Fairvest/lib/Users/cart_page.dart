@@ -340,7 +340,7 @@ class _CartPageState extends State<CartPage> {
               break;
             case 5:
               Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => OpenUrlPage()));
+                  context, MaterialPageRoute(builder: (_) => ChatBotPage()));
               break;
           }
         }

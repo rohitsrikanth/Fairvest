@@ -115,27 +115,27 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                     ),
                   ),
                   // Location and Delivery Information
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.location_on, color: Colors.green),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Weather in my area',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            Text('Kalyanpur, Kanpur'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(),
+                  // const Padding(
+                  //   padding: EdgeInsets.all(16.0),
+                  //   child: Row(
+                  //     children: [
+                  //       Icon(Icons.location_on, color: Colors.green),
+                  //       SizedBox(width: 10),
+                  //       Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: [
+                  //           Text(
+                  //             'Weather in my area',
+                  //             style: TextStyle(
+                  //                 fontSize: 16, fontWeight: FontWeight.bold),
+                  //           ),
+                  //           Text('Kalyanpur, Kanpur'),
+                  //         ],
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
+                  // const Divider(),
                   // Menu Options for Farmers
                   _buildMenuOption(
                     context,

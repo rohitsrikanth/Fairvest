@@ -23,7 +23,7 @@ class UploadProductApp extends StatelessWidget {
 Future<void> uploadProduct(String productName, String description, String units,
     String pricePerUnit, String date, String category, String imagePath) async {
   try {
-    final uri = Uri.parse('$baseUrl/upload-product'); // Backend API endpoint
+    final uri = Uri.parse('$baseUrl/upload-product1'); // Backend API endpoint
     final request = http.MultipartRequest('POST', uri);
 
     // Add form fields
@@ -65,15 +65,8 @@ class _UploadProductPageState extends State<UploadProductPage> {
   final TextEditingController _unitsController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   DateTime? _selectedDate;
-  final List<String> _categories = [
-    'Fresh Vegetables',
-    'Fruits and Berries',
-    'Oil Seeds',
-    'Oils',
-    'Grains',
-    'Pulses'
-  ];
-  String _selectedCategory = 'Fresh Vegetables'; // Default category
+  final List<String> _categories = ['Crop Seeds', 'Pesticide'];
+  String _selectedCategory = 'Crop Seeds'; // Default category
 
   /// Function to pick an image
   Future<void> _pickImage() async {

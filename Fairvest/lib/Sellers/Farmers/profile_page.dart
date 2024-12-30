@@ -119,7 +119,7 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                   _buildMenuOption(
                     context,
                     icon: Icons.inventory,
-                    label: 'Manage Orders',
+                    label: 'Uploaded products',
                     onTap: () {
                       Navigator.push(
                         context,

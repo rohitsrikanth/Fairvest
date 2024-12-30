@@ -246,7 +246,7 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
               break;
             case 5:
               Navigator.pushReplacement(
-                  context, MaterialPageRoute(builder: (_) => OpenUrlPage()));
+                  context, MaterialPageRoute(builder: (_) => ChatBotPage()));
               break;
           }
         }
@@ -407,7 +407,7 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
   Widget _buildShopByCategory() {
     const categories = [
       {'title': 'Fresh Vegetables', 'image': 'assets/fresh_vegetables.jpg'},
-      {'title': 'Fruits & Berries', 'image': 'assets/fruits.png'},
+      {'title': 'Fruits and Berries', 'image': 'assets/fruits.png'},
       {'title': 'Grains', 'image': 'assets/grains.jpg'},
       {'title': 'Pulses', 'image': 'assets/pulses.jpg'},
       {'title': 'Oil seeds', 'image': 'assets/oil_seeds.jpg'},
@@ -442,7 +442,8 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => FruitsAndVegetablesPage()),
+                        builder: (_) => FruitsAndVegetablesPage(
+                            category: category['title'] ?? 'Default Category')),
                   );
                 },
               );

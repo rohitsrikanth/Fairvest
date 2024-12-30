@@ -68,7 +68,7 @@ class _FarmersManageOrdersState extends State<FarmersManageOrders> {
           children: [
             Icon(Icons.list_alt, size: 30),
             SizedBox(width: 10),
-            Text('Manage Orders'),
+            Text('Inventory Status'),
           ],
         ),
       ),
@@ -133,29 +133,6 @@ class OrderCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      // Action for Accept button
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                    ),
-                    child: const Text('Accept'),
-                  ),
-                  const SizedBox(height: 5),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Action for Reject button
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.brown,
-                    ),
-                    child: const Text('Reject'),
-                  ),
-                ],
               ),
             ],
           )),
