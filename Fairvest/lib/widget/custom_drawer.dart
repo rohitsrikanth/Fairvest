@@ -1,5 +1,7 @@
 import 'package:fairvest1/Users/cart_page.dart';
+import 'package:fairvest1/Users/category_shopping.dart';
 import 'package:fairvest1/Users/my_orders_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fairvest1/Users/home_page.dart';
 
@@ -55,30 +57,35 @@ class DrawerMenuPage extends StatelessWidget {
               );
             },
           ),
-          const ExpansionTile(
-            leading: Icon(Icons.category),
-            title: Text('Shop By Category'),
+          // Remove the const from ExpansionTile
+          ExpansionTile(
+            leading: const Icon(Icons.category),
+            title: const Text('Shop By Category'),
             children: [
-              /*ListTile(
-                title: const Text('Fresh Vegetables'),
+              ListTile(
+                title: Text('Fresh Vegetables'),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => FruitsAndVegetablesPage()),
+                      builder: (context) =>
+                          FruitsAndVegetablesPage(category: 'Fresh Vegetables'),
+                    ),
                   );
                 },
               ),
               ListTile(
-                title: const Text('Fruits & Berries'),
+                title: Text('Fruits & Berries'),
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => FruitsAndVegetablesPage()),
+                      builder: (context) => FruitsAndVegetablesPage(
+                          category: 'Fruits and Berries'),
+                    ),
                   );
                 },
-              ),*/
+              ),
             ],
           ),
           ListTile(
@@ -101,6 +108,7 @@ class DrawerMenuPage extends StatelessWidget {
             title: const Text('Notifications'),
             onTap: () {},
           ),
+          // Another ExpansionTile, no const needed
           ExpansionTile(
             leading: const Icon(Icons.help_outline),
             title: const Text('FAQ'),

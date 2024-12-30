@@ -360,7 +360,7 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
               errorBuilder: (context, error, stackTrace) {
                 debugPrint('Error loading image: ${product['image_path']}');
                 return Image.asset(
-                  'assets/Dataset/Fruits and Berries/pomegranate/Image_9.jpg',
+                  'assets/Dataset/Fruits_and_Berries/pomegranate/Image_9.jpg',
                   height: 70,
                   width: 130,
                 );

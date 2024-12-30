@@ -9,27 +9,37 @@ import 'package:http/http.dart' as http;
 void main() {
   double amount = 50.0; // Example amount
   runApp(MaterialApp(
-    home: PaymentSuccessPage(amount: amount),
+    home: PaymentSuccessPage(
+      amount: amount,
+      cartItems: [],
+    ),
   ));
 }
 
 class PaymentSuccessPage extends StatefulWidget {
   final double amount;
-  const PaymentSuccessPage({required this.amount, Key? key}) : super(key: key);
+  final List<Map<String, dynamic>> cartItems; // The cart items to display
+
+  const PaymentSuccessPage(
+      {required this.amount, required this.cartItems, Key? key})
+      : super(key: key);
   @override
   _PaymentSuccessPageState createState() => _PaymentSuccessPageState();
 }
 
 class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   Map<String, dynamic> userData = {};
+  Map<String, dynamic> userData1 = {};
+
   bool isLoading = true;
 // Replace with your base URL
   String currentTime = '';
-
+  String referenceNumber = '';
   @override
   void initState() {
     super.initState();
     fetchUserDetails();
+    fetchrefnum();
     getCurrentTime();
   }
 
@@ -39,6 +49,25 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
       if (response.statusCode == 200) {
         setState(() {
           userData = jsonDecode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch user details');
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+    }
+  }
+
+  Future<void> fetchrefnum() async {
+    try {
+      final response =
+          await http.get(Uri.parse('$baseUrl/orders/${widget.cartItems}'));
+      if (response.statusCode == 200) {
+        setState(() {
+          userData1 = jsonDecode(response.body);
+          referenceNumber = userData1['reference_number'] ??
+              'N/A'; // Get the reference number
           isLoading = false;
         });
       } else {
@@ -115,7 +144,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                             ),
                           ),
                           Divider(color: Colors.grey),
-                          detailRow('Ref Number', '000085752257'),
+                          detailRow('Ref Number', referenceNumber),
                           detailRow('Payment Time', currentTime),
                           detailRow('Payment Method', 'Bank Transfer'),
                           detailRow('Sender Name', userData['name'] ?? 'N/A'),

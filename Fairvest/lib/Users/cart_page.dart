@@ -3,6 +3,7 @@ import 'package:fairvest1/Users/home_page.dart';
 import 'package:fairvest1/Users/my_orders_page.dart';
 import 'package:fairvest1/Users/profile_page.dart';
 import 'package:fairvest1/constants.dart';
+import 'package:fairvest1/payment_page_1.dart';
 import 'package:fairvest1/widget/custom_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -205,7 +206,7 @@ class _CartPageState extends State<CartPage> {
                 _buildDeliveryAddress(),
                 for (var item in cartItems)
                   _buildProductCard(
-                    item['product_id'],
+                    item['product_id'], //??item['productid'],
                     item['name'],
                     item['weight'],
                     item['price'],
@@ -234,11 +235,19 @@ class _CartPageState extends State<CartPage> {
     double totalSavings = 0.0;
 
     for (var item in cartItems) {
-      double price = double.parse(item['price'].toString());
-      double originalPrice = double.parse(item['original_price'].toString());
-      int quantity = item['quantity'];
+      double price =
+          item['price'] != null ? double.parse(item['price'].toString()) : 0.0;
+      double originalPrice = item['original_price'] != null
+          ? double.parse(item['original_price'].toString())
+          : 0.0;
+      int quantity =
+          item['quantity'] ?? 0; // Using default 0 for quantity if it's null
       totalPrice += price * quantity;
       totalSavings += (originalPrice - price) * quantity;
+    }
+
+    if (cartItems.isEmpty) {
+      return const Center(child: Text('No items in the cart.'));
     }
 
     return Padding(
@@ -271,13 +280,32 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildActionButtons() {
+    // Calculate total savings here
+    double totalSavings = 0.0;
+    for (var item in cartItems) {
+      double price =
+          item['price'] != null ? double.parse(item['price'].toString()) : 0.0;
+      double originalPrice = item['original_price'] != null
+          ? double.parse(item['original_price'].toString())
+          : 0.0;
+      int quantity = item['quantity'] ?? 0; // Default to 0 if quantity is null
+      totalSavings += (originalPrice - price) * quantity;
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         ElevatedButton.icon(
           onPressed: () {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const MyOrdersApp()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PaymentPage(
+                  amount: totalSavings, // Pass the totalSavings as a double
+                  cartItems: List<Map<String, dynamic>>.from(cartItems),
+                ),
+              ),
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
@@ -285,15 +313,15 @@ class _CartPageState extends State<CartPage> {
           icon: const Icon(Icons.flash_on),
           label: const Text("Get it now"),
         ),
-        ElevatedButton.icon(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey[300],
-          ),
-          icon: const Icon(Icons.schedule, color: Colors.black),
-          label: const Text("Schedule delivery",
-              style: TextStyle(color: Colors.black)),
-        ),
+        // ElevatedButton.icon(
+        //   onPressed: () {},
+        //   style: ElevatedButton.styleFrom(
+        //     backgroundColor: Colors.grey[300],
+        //   ),
+        //   icon: const Icon(Icons.schedule, color: Colors.black),
+        //   label: const Text("Schedule delivery",
+        //       style: TextStyle(color: Colors.black)),
+        // ),
       ],
     );
   }

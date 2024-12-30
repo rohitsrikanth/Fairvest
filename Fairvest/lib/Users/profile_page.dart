@@ -166,19 +166,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.language, color: Colors.black),
-                    title:
-                        const Text('Language', style: TextStyle(fontSize: 18)),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const FairvestHomePage()),
-                      );
-                    },
-                  ),
+                  // ListTile(
+                  //   leading: const Icon(Icons.language, color: Colors.black),
+                  //   title:
+                  //       const Text('Language', style: TextStyle(fontSize: 18)),
+                  //   trailing: const Icon(Icons.arrow_forward_ios),
+                  //   onTap: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //           builder: (context) => const FairvestHomePage()),
+                  //     );
+                  //   },
+                  // ),
                   ListTile(
                     leading:
                         const Icon(Icons.shopping_bag, color: Colors.black),

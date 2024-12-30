@@ -131,7 +131,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PaymentPage(amount: widget.product['price']),
+        builder: (_) => PaymentPage(
+          amount: widget.product['price'],
+          cartItems: [widget.product] // Wrap the single Map into a list
+          ,
+        ),
       ),
     );
   }

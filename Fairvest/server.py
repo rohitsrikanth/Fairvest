@@ -583,6 +583,21 @@ def add_to_cart1():
     else:
         return jsonify({"error": "Failed to add product to cart"}), 500
 
+import time,random,string
+
+@app.route('/orders', methods=['GET'])
+def generate_reference_number():
+    # Generate a timestamp
+    timestamp = int(time.time())
+    
+    # Generate a random string of 6 characters (letters and digits)
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    
+    # Combine the timestamp and random string to form the reference number
+    reference_number = f"{timestamp}-{random_str}"
+    print(reference_number)
+    return jsonify({"reference_number": reference_number})
+
 @app.route('/products1', methods=['GET'])
 def get_products1():
     products = list(pnc_collection.find({}, {'_id': 0}))  # Exclude the '_id' field

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fairvest1/Sellers/Farmers/chat_bot.dart';
 import 'package:fairvest1/Users/cart_page.dart';
 import 'package:fairvest1/Users/profile_page.dart';
@@ -11,11 +13,11 @@ import 'package:fairvest1/constants.dart';
 import 'package:fairvest1/product_detail_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -253,13 +255,24 @@ class _FruitsAndVegetablesPageState extends State<FruitsAndVegetablesPage> {
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    return ProductCard(
-                      imageUrl: product['image_path'] ?? '',
-                      title: product['productname'] ?? 'No Title',
-                      subtitle: product['description'] ?? 'No Description',
-                      price: product['price']?.toString() ?? '0.00',
-                      productId: product['product_id']?.toString() ?? '',
-                      onAddToCart: addToCart,
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ProductDetailPage(product: product),
+                          ),
+                        );
+                      },
+                      child: ProductCard(
+                        imageUrl: product['image_path'] ?? '',
+                        title: product['productname'] ?? 'No Title',
+                        subtitle: product['description'] ?? 'No Description',
+                        price: product['price']?.toString() ?? '0.00',
+                        productId: product['product_id']?.toString() ?? '',
+                        onAddToCart: addToCart,
+                      ),
                     );
                   },
                 ),
@@ -460,7 +473,7 @@ class ProductCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
+            child: Image.asset(
               imageUrl,
               height: 80,
               width: 80,
