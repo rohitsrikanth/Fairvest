@@ -44,7 +44,9 @@ dependencies:
   geocoding: ^2.0.5
   location: ^5.0.0
   flutter_spinkit: ^5.1.0
-
+  intl: ^0.17.0
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -125,7 +127,9 @@ flutter:
     - assets/gpay.png
     - assets/phonepe.png
     - assets/paytm.png
+    - assets/admin.png
     - assets/bhim.png
+    - assets/uploads/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

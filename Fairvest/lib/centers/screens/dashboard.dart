@@ -30,12 +30,12 @@ class DashboardPage extends StatelessWidget {
               },
               child: const Text('Manage Products'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/order-management');
-              },
-              child: const Text('Manage Orders'),
-            ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.pushNamed(context, '/order-management');
+            //   },
+            //   child: const Text('Manage Orders'),
+            // ),
           ],
         ),
       ),

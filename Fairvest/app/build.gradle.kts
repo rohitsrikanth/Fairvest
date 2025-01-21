@@ -19,7 +19,18 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation(libs.guava)
+
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+
+    // Add the dependency for Firebase Authentication library
+    implementation("com.google.firebase:firebase-auth")
+
+    // Firebase Core (Optional)
+    implementation("com.google.firebase:firebase-core")
 }
+
+
 
 testing {
     suites {

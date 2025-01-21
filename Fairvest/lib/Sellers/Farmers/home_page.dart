@@ -57,7 +57,7 @@ class _FarmersHomePageState extends State<FarmersHomePage> {
       Uri.parse(apiUrl),
       headers: {'Content-Type': 'application/json'},
       body:
-          jsonEncode({'farmer_id': userData["name"], 'product_id': productId}),
+          jsonEncode({'user_name': userData["name"], 'product_id': productId}),
     );
 
     if (response.statusCode == 200) {

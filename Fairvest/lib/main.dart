@@ -1,3 +1,4 @@
+import 'package:fairvest1/Users/home_page.dart';
 import 'package:fairvest1/centers/screens/login_page.dart';
 import 'Users/sign_up_page_2.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,7 @@ import 'Sellers/Farmers/home_page.dart';
 import 'Sellers/FoodMillOperators/home_page.dart';
 import 'Sellers/wholesellers/home_page.dart';
 import 'Sellers/P&C/home_page.dart';
-import 'centers/screens/customer_management.dart';
+import 'centers/theme/customer_management.dart';
 import 'centers/screens/dashboard.dart';
 import 'centers/screens/farmer_management.dart';
 import 'centers/screens/inventory_management.dart';
@@ -48,11 +49,12 @@ class MyApp extends StatelessWidget {
           '/order-management': (context) => const OrderManagementPage(),
           '/inventory-management': (context) => const InventoryManagementPage(),
           '/payment-management': (context) => const PaymentManagementPage(),
-          '/customer-management': (context) => const CustomerManagementPage(),
+          //'/customer-management': (context) => const CustomerManagementPage(),
           '/reports': (context) => const ReportsPage(),
           '/support': (context) => const SupportPage(),
           '/settings': (context) => const SettingsPage(),
           '/weatherhome': (context) => const WeatherScreen(),
+          '/userhome' :(context) => const FairvestHomePage()
         });
   }
 }
@@ -63,12 +65,13 @@ class FairvestScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF8fc5b8),
       body: Column(
         children: [
           // Header Section
           Container(
             color: Colors.green,
-            padding: const EdgeInsets.all(1),
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 Row(
@@ -92,17 +95,19 @@ class FairvestScreen extends StatelessWidget {
               ],
             ),
           ),
-
+Divider(thickness: 0, color: Colors.transparent),
           // Supply Chain Image Section
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(1),
-              child: Image.asset(
-                'assets/supply_chain.png', // Add your supply chain image in assets
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
+          // Supply Chain Image Section
+Expanded(
+  child: Container(
+    width: double.infinity,
+    child: Image.asset(
+      'assets/supply_chain.png', // Add your supply chain image in assets
+      fit: BoxFit.contain, // Ensures the image occupies the full width and scales properly
+    ),
+  ),
+),
+
 
           // Centers Button Section
           Container(
@@ -197,14 +202,14 @@ class FairvestScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'To know more about who we are?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
-                ),
+                // const SizedBox(height: 20),
+                // const Text(
+                //   'To know more about who we are?',
+                //   style: TextStyle(
+                //     fontSize: 16,
+                //     color: Colors.black,
+                //   ),
+                // ),
               ],
             ),
           ),

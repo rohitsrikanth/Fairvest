@@ -1,3 +1,4 @@
+import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -28,7 +29,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
       // Sending message to the backend via HTTP POST
       var response = await http.post(
         Uri.parse(
-            'http://192.168.1.7:5000/ask'), // Replace with your backend URL
+            '$baseUrl/ask'), // Replace with your backend URL
         headers: {"Content-Type": "application/json"},
         body: json.encode({"question": message}),
       );

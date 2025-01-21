@@ -48,7 +48,7 @@ class _CartPageState extends State<CartPage> {
             isLoading = false;
           });
         } else {
-          throw Exception('Failed to fetch user details');
+          throw Exception('No items in carts');
         }
       } catch (e) {
         print('Error fetching user details: $e');
@@ -65,10 +65,11 @@ class _CartPageState extends State<CartPage> {
         setState(() {
           cartItems = responseData["cart"];
         });
+    
       } else {
         print("Failed to load cart items: ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to load cart items.")),
+          const SnackBar(content: Text("No items in cart")),
         );
       }
     } catch (e) {
@@ -78,6 +79,37 @@ class _CartPageState extends State<CartPage> {
       );
     }
   }
+
+  Future<void> updateCart(String productId, int newQuantity) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/update_cart'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "user_name": userData['name'],
+        "product_id": productId,
+        "quantity": newQuantity,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        // Update local cart items after backend is updated
+        final index = cartItems.indexWhere((item) => item['product_id'] == productId);
+        if (index != -1) {
+          cartItems[index]['quantity'] = newQuantity;
+        }
+      });
+    } else {
+      throw Exception('Failed to update cart on server.');
+    }
+  } catch (e) {
+    print('Error updating cart: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Failed to update cart. Please try again.")),
+    );
+  }
+}
 
   Widget _buildDeliveryAddress() {
     return Container(
@@ -105,8 +137,8 @@ class _CartPageState extends State<CartPage> {
                       Text(
                         'House No: ${userData['address']['house'] ?? 'N/A'}, '
                         'Apartment: ${userData['address']['apartment'] ?? 'N/A'},\n'
-                        'Street: ${userData['address']['street'] ?? 'N/A'}, '
-                        'Directions: ${userData['address']['directions'] ?? 'N/A'}',
+                        // 'Street: ${userData['address']['street'] ?? 'N/A'}, '
+                        '${userData['address']['city,state'] ?? 'N/A'}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black,
@@ -130,60 +162,63 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  Widget _buildProductCard(String productId, String name, String weight,
-      String price, String originalPrice, String imagePath, int quantity) {
-    return Card(
-      elevation: 2.0,
-      margin: const EdgeInsets.symmetric(vertical: 5.0),
-      child: ListTile(
-        leading: Image.asset(
-          imagePath ?? 'assets/placeholder1.jpeg',
-          width: 50,
-          height: 50,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Image.asset(
-              'assets/placeholder1.jpeg',
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-            );
-          },
-        ),
-        title: Text(name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("₹$price", style: const TextStyle(fontSize: 25)),
-            Text("₹$originalPrice",
-                style: const TextStyle(
-                    decoration: TextDecoration.lineThrough, fontSize: 12)),
-            Text("Quantity: $quantity"),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-                icon: const Icon(Icons.remove, color: Colors.green),
-                onPressed: () {
-                  setState(() {
-                    quantity = quantity > 1 ? quantity - 1 : quantity;
-                  });
-                }),
-            Text("$quantity"),
-            IconButton(
-                icon: const Icon(Icons.add, color: Colors.green),
-                onPressed: () {
-                  setState(() {
-                    quantity++;
-                  });
-                }),
-          ],
-        ),
+ Widget _buildProductCard(String productId, String name, String weight,
+    String price, String originalPrice, String imagePath, int quantity) {
+  return Card(
+    elevation: 2.0,
+    margin: const EdgeInsets.symmetric(vertical: 5.0),
+    child: ListTile(
+      leading: Image.asset(
+        imagePath ?? 'assets/placeholder1.jpeg',
+        width: 50,
+        height: 50,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Image.asset(
+            'assets/placeholder1.jpeg',
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+          );
+        },
       ),
-    );
-  }
+      title: Text(name),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("₹$price", style: const TextStyle(fontSize: 25)),
+          Text("₹$originalPrice",
+              style: const TextStyle(
+                  decoration: TextDecoration.lineThrough, fontSize: 12)),
+          Text("Quantity: $quantity"),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.remove, color: Colors.green),
+            onPressed: quantity > 1
+                ? () async {
+                    final newQuantity = quantity - 1;
+                    await updateCart(productId, newQuantity);
+                  }
+                : null,
+          ),
+          Text("$quantity"),
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.green),
+            onPressed: () async {
+              final newQuantity = quantity + 1;
+              await updateCart(productId, newQuantity);
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -191,12 +226,7 @@ class _CartPageState extends State<CartPage> {
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text("Cart"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
-          ),
-        ],
+        
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -282,13 +312,22 @@ class _CartPageState extends State<CartPage> {
   Widget _buildActionButtons() {
     // Calculate total savings here
     double totalSavings = 0.0;
+    double totalPrice =0.0;
     for (var item in cartItems) {
       double price =
           item['price'] != null ? double.parse(item['price'].toString()) : 0.0;
       double originalPrice = item['original_price'] != null
           ? double.parse(item['original_price'].toString())
           : 0.0;
-      int quantity = item['quantity'] ?? 0; // Default to 0 if quantity is null
+      int quantity =
+          item['quantity'] ?? 0; // Using default 0 for quantity if it's null
+      totalPrice += price * quantity;
+      // double price =
+      //     item['price'] != null ? double.parse(item['price'].toString()) : 0.0;
+      // double originalPrice = item['original_price'] != null
+      //     ? double.parse(item['original_price'].toString())
+      //     : 0.0;
+      // int quantity = item['quantity'] ?? 0; // Default to 0 if quantity is null
       totalSavings += (originalPrice - price) * quantity;
     }
 
@@ -301,8 +340,8 @@ class _CartPageState extends State<CartPage> {
               context,
               MaterialPageRoute(
                 builder: (_) => PaymentPage(
-                  amount: totalSavings, // Pass the totalSavings as a double
-                  cartItems: List<Map<String, dynamic>>.from(cartItems),
+                  amount: totalPrice, // Pass the totalSavings as a double
+                  isSingle : false,
                 ),
               ),
             );
@@ -337,7 +376,7 @@ class _CartPageState extends State<CartPage> {
             icon: Icon(Icons.qr_code_scanner), label: 'Scanner'),
         BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
         BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
+        // BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
       ],
       currentIndex: _currentIndex,
       onTap: (index) {

@@ -1,4 +1,6 @@
 import 'package:fairvest1/Sellers/Farmers/prediction.dart';
+import 'package:fairvest1/Sellers/edit_profile.dart';
+import 'package:fairvest1/Sellers/login_page.dart';
 import 'package:fairvest1/constants.dart';
 import 'package:flutter/material.dart';
 import 'manage_orders.dart';
@@ -71,14 +73,14 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // Notification action
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.notifications),
+        //     onPressed: () {
+        //       // Notification action
+        //     },
+        //   ),
+        // ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -174,20 +176,44 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                   ),
                   _buildMenuOption(
                     context,
-                    icon: Icons.report_problem,
-                    label: 'Raise a Complaint',
+                    icon: Icons.logout,
+                    label: 'Log out',
                     onTap: () {
-                      // Action for raising a complaint
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => sLoginPage()),
+                      );
                     },
                   ),
-                  _buildMenuOption(
+                   _buildMenuOption(
                     context,
-                    icon: Icons.star,
-                    label: 'FV Score',
+                    icon: Icons.edit,
+                    label: 'Edit profile',
                     onTap: () {
-                      // Action for FV Score
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => SellerEditPage()),
+                      );
                     },
                   ),
+                  // _buildMenuOption(
+                  //   context,
+                  //   icon: Icons.report_problem,
+                  //   label: 'Raise a Complaint',
+                  //   onTap: () {
+                  //     // Action for raising a complaint
+                  //   },
+                  // ),
+                  // _buildMenuOption(
+                  //   context,
+                  //   icon: Icons.star,
+                  //   label: 'FV Score',
+                  //   onTap: () {
+                  //     // Action for FV Score
+                  //   },
+                  // ),
                 ],
               ),
             ),

@@ -14,6 +14,7 @@ class sLoginPage extends StatefulWidget {
 class _LoginPageState extends State<sLoginPage> {
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _obscureText = true;
 
   Future<void> _login() async {
     String userId = _userIdController.text.trim();
@@ -35,7 +36,6 @@ class _LoginPageState extends State<sLoginPage> {
       if (response.statusCode == 200) {
         _showMessage('Login successful');
         // Navigate based on role
-        print(responseData);
         String role = responseData['data']['business_type'];
         if (role == 'Farmer') {
           Navigator.pushNamed(context, '/farmer');
@@ -55,8 +55,13 @@ class _LoginPageState extends State<sLoginPage> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
   }
 
   @override
@@ -66,7 +71,6 @@ class _LoginPageState extends State<sLoginPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header Section
             Container(
               color: Colors.green,
               padding: const EdgeInsets.all(8),
@@ -86,17 +90,29 @@ class _LoginPageState extends State<sLoginPage> {
               ),
             ),
             const SizedBox(height: 20),
-            // Logo Section
             Image.asset(
-              'assets/fairvest_logo.png', // Placeholder for your logo
+              'assets/fairvest_logo.png',
               height: 150,
             ),
             const SizedBox(height: 20),
-            // Tagline Section
             const Text(
               'Fairvest – Growing Connections,\nHarvesting Fairness.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'Please enter your User ID according to your role:\n'
+                'FAR - Farmer\n'
+                
+                
+                'PNC - Pesticide and Crop Seed Seller\n'
+                'For example, if you are a Food Mill Operator, your User ID might look like FMO-JohnDoe.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.black54),
+              ),
             ),
             const SizedBox(height: 20),
             // Login Form
@@ -113,7 +129,7 @@ class _LoginPageState extends State<sLoginPage> {
                         vertical: 10,
                         horizontal: 16,
                       ),
-                      hintText: 'Enter User ID (e.g., FMO-12345)',
+                      hintText: 'Enter User ID (e.g., FMO-JohnDoe)',
                       prefixIcon: const Icon(Icons.person),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -124,7 +140,7 @@ class _LoginPageState extends State<sLoginPage> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscureText,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.green[200],
@@ -134,7 +150,12 @@ class _LoginPageState extends State<sLoginPage> {
                       ),
                       hintText: 'Enter Password',
                       prefixIcon: const Icon(Icons.vpn_key),
-                      suffixIcon: const Icon(Icons.visibility_off),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureText ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: _togglePasswordVisibility,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
@@ -182,8 +203,8 @@ class _LoginPageState extends State<sLoginPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    const SellersSignUpPage()),
+                              builder: (context) => const SellersSignUpPage(),
+                            ),
                           );
                         },
                         child: const Text(
@@ -208,3 +229,4 @@ class _LoginPageState extends State<sLoginPage> {
     );
   }
 }
+

@@ -86,48 +86,96 @@ class DrawerMenuPage extends StatelessWidget {
                   );
                 },
               ),
-            ],
-          ),
-          ListTile(
-            leading: const Icon(Icons.book),
-            title: const Text('FV Cookbook'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.card_giftcard),
-            title: const Text('Gift Card'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Analysis'),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: const Text('Notifications'),
-            onTap: () {},
-          ),
-          // Another ExpansionTile, no const needed
-          ExpansionTile(
-            leading: const Icon(Icons.help_outline),
-            title: const Text('FAQ'),
-            children: [
               ListTile(
-                title: const Text('Question 1'),
-                onTap: () {},
+                title: Text('Grains'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FruitsAndVegetablesPage(
+                          category: 'Grains'),
+                    ),
+                  );
+                },
               ),
               ListTile(
-                title: const Text('Question 2'),
-                onTap: () {},
+                title: Text('Pulses'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FruitsAndVegetablesPage(
+                          category: 'Pulses'),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                title: Text('Oil seeds'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FruitsAndVegetablesPage(
+                          category: 'Oil seeds'),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                title: Text('Oils'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FruitsAndVegetablesPage(
+                          category: 'Oils'),
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          ListTile(
-            leading: const Icon(Icons.contact_mail),
-            title: const Text('Contact us'),
-            onTap: () {},
-          ),
+          // // ListTile(
+          // //   leading: const Icon(Icons.book),
+          // //   title: const Text('FV Cookbook'),
+          // //   onTap: () {},
+          // // ),
+          // // ListTile(
+          // //   leading: const Icon(Icons.card_giftcard),
+          // //   title: const Text('Gift Card'),
+          // //   onTap: () {},
+          // // ),
+          // // ListTile(
+          // //   leading: const Icon(Icons.analytics),
+          // //   title: const Text('Analysis'),
+          // //   onTap: () {},
+          // // ),
+          // // ListTile(
+          // //   leading: const Icon(Icons.notifications),
+          // //   title: const Text('Notifications'),
+          // //   onTap: () {},
+          // // ),
+          // // Another ExpansionTile, no const needed
+          // ExpansionTile(
+          //   leading: const Icon(Icons.help_outline),
+          //   title: const Text('FAQ'),
+          //   children: [
+          //     ListTile(
+          //       title: const Text('Question 1'),
+          //       onTap: () {},
+          //     ),
+          //     ListTile(
+          //       title: const Text('Question 2'),
+          //       onTap: () {},
+          //     ),
+          //   ],
+          // ),
+          // ListTile(
+          //   leading: const Icon(Icons.contact_mail),
+          //   title: const Text('Contact us'),
+          //   onTap: () {},
+          // ),
         ],
       ),
     );

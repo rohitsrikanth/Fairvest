@@ -15,9 +15,9 @@ class SellersSignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SellersSignUpPage> {
   final List<String> businessTypes = [
     "Farmer",
-    "Food Mill Operator",
+   
     "Pesticide and Crop Seller",
-    "Wholesale Seller"
+    
   ];
 
   String? selectedBusinessType;

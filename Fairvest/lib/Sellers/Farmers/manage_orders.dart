@@ -128,7 +128,7 @@ class OrderCard extends StatelessWidget {
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     Text(
-                      order.units,
+                      order.units.toString(),
                       style: TextStyle(color: Colors.grey[800]),
                     ),
                   ],
@@ -167,7 +167,7 @@ class OrderItem {
   final String imageUrl;
   final String title;
   final String subtitle;
-  final String units;
+  final double units;
 
   OrderItem({
     required this.imageUrl,

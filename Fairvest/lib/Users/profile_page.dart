@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:fairvest1/Sellers/Farmers/chat_bot.dart';
 import 'package:fairvest1/Users/cart_page.dart';
+import 'package:fairvest1/Users/edit_profile.dart';
 import 'package:fairvest1/Users/home_page.dart';
+import 'package:fairvest1/Users/login_page.dart';
 import 'package:fairvest1/Users/my_orders_page.dart';
 import 'package:fairvest1/constants.dart';
 import 'package:fairvest1/widget/custom_drawer.dart';
@@ -69,15 +71,15 @@ class _ProfilePageState extends State<ProfilePage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context);
+Navigator.pushNamed(context, '/userhome');
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {},
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.notifications),
+        //     onPressed: () {},
+        //   ),
+        // ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -208,12 +210,38 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   ListTile(
                     leading:
-                        const Icon(Icons.report_problem, color: Colors.black),
-                    title: const Text('Raise a Complaint',
-                        style: TextStyle(fontSize: 18)),
+                        const Icon(Icons.logout, color: Colors.black),
+                    title: const Text('Log out', style: TextStyle(fontSize: 18)),
                     trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => LoginPage()),
+                      );
+                    },
                   ),
+                  ListTile(
+                    leading:
+                        const Icon(Icons.edit, color: Colors.black),
+                    title: const Text('Edit profile', style: TextStyle(fontSize: 18)),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => EditProfilePage(userId: userData['email'],)),
+                      );
+                    },
+                  ),
+                  // ListTile(
+                  //   leading:
+                  //       const Icon(Icons.report_problem, color: Colors.black),
+                  //   title: const Text('Raise a Complaint',
+                  //       style: TextStyle(fontSize: 18)),
+                  //   trailing: const Icon(Icons.arrow_forward_ios),
+                  //   onTap: () {},
+                  // ),
                 ],
               ),
             ),
@@ -229,10 +257,10 @@ class _ProfilePageState extends State<ProfilePage> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner), label: 'Scanner'),
+            icon: Icon(Icons.search), label: 'Scanner'),
         BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
         BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Menu'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
+        // BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Chatbot'),
       ],
       currentIndex: _currentIndex,
       onTap: (index) {

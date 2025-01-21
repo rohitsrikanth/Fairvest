@@ -1,4 +1,5 @@
 import 'dart:convert'; // For JSON decoding
+import 'package:fairvest1/Sellers/P&C/current_orders.dart';
 import 'package:fairvest1/Sellers/manage_orders.dart';
 import 'package:fairvest1/Sellers/profile_page.dart';
 import 'package:fairvest1/constants.dart';
@@ -110,7 +111,12 @@ class _P_C_HomePageState extends State<P_C_HomePage> {
                   _buildCustomButton(
                     icon: Icons.shopping_cart,
                     label: 'Current Orders',
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => MyOrdersApp()));
+                    },
                   ),
                   const SizedBox(height: 10),
                   _buildCustomButton(
@@ -135,12 +141,12 @@ class _P_C_HomePageState extends State<P_C_HomePage> {
                   //   label: 'Production schedule',
                   //   onPressed: () {},
                   // ),
-                  const SizedBox(height: 10),
-                  _buildCustomButton(
-                    icon: Icons.bar_chart,
-                    label: 'Revenue summary',
-                    onPressed: () {},
-                  ),
+                  // const SizedBox(height: 10),
+                  // _buildCustomButton(
+                  //   icon: Icons.bar_chart,
+                  //   label: 'Revenue summary',
+                  //   onPressed: () {},
+                  // ),
                 ],
               ),
             ),
@@ -160,7 +166,7 @@ class _P_C_HomePageState extends State<P_C_HomePage> {
         backgroundColor: Colors.green,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
       onPressed: onPressed,

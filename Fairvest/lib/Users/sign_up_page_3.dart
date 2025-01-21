@@ -92,63 +92,77 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
   }
 
   Future<void> _saveAddressDetails() async {
-    final addressDetails = {
-      "address": {
-        "house": _houseController.text,
-        "apartment": _apartmentController.text,
-        "directions": _directionController.text,
-      },
-      "type": selectedAddressType,
-    };
+  // Collect input values
+  final addressDetails = {
+    "address": {
+      "house": _houseController.text.trim(),
+      "apartment": _apartmentController.text.trim(),
+      "city,state": _directionController.text.trim(),
+    },
+    "type": selectedAddressType,
+  };
 
-    print(addressDetails);
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/buyers_sign3'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(addressDetails),
-      );
+  // Validate inputs
+  if (_houseController.text.trim().isEmpty ||
+      _apartmentController.text.trim().isEmpty ||
+      _directionController.text.trim().isEmpty ||
+      selectedAddressType.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Error: Please fill all the details')),
+    );
+    return; // Stop execution if validation fails
+  }
 
-      if (response.statusCode == 200) {
-        setState(() {
-          showModal = true;
-        });
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Sign-in Successful!'),
-              content: const Center(
-                child: Icon(Icons.check_circle, color: Colors.green, size: 50),
+  print(addressDetails);
+
+  try {
+    // API call
+    final response = await http.post(
+      Uri.parse('$baseUrl/buyers_sign3'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(addressDetails),
+    );
+
+    if (response.statusCode == 200) {
+      // Show success dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Sign-in Successful!'),
+            content: const Center(
+              child: Icon(Icons.check_circle, color: Colors.green, size: 50),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                child: const Text('Go'),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginPage(),
-                      ),
-                    );
-                  },
-                  child: const Text('Go'),
-                ),
-              ],
-            );
-          },
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${response.body}')),
-        );
-      }
-    } catch (e) {
+            ],
+          );
+        },
+      );
+    } else {
+      // Show error message from the API response
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('Error: ${response.body}')),
       );
     }
+  } catch (e) {
+    // Handle exceptions
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Error: Unable to save details.')),
+    );
+    print('Exception: $e'); // For debugging
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

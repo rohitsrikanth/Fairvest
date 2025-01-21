@@ -3,23 +3,23 @@ import 'package:fairvest1/payment_success_page.dart';
 
 void main() {
   double amount = 50.0; // Example amount
-  List<Map<String, dynamic>> cartItems = []; // Example cart items
+  bool isSingle = true;
   runApp(MaterialApp(
-    home: PaymentPage(amount: amount, cartItems: cartItems),
-  ));
+    home: PaymentPage(amount: amount, isSingle :isSingle),));
 }
 
 class PaymentPage extends StatefulWidget {
   final double amount; // The total savings or payment amount
-  final List<Map<String, dynamic>> cartItems; // The cart items to display
-
-  PaymentPage({required this.amount, required this.cartItems});
+  bool isSingle;
+  // Constructor with required parameters
+  PaymentPage({required this.amount, required this.isSingle});
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
 
 class _PaymentPageState extends State<PaymentPage> {
+
   @override
   Widget build(BuildContext context) {
     // GST calculation (example)
@@ -44,14 +44,14 @@ class _PaymentPageState extends State<PaymentPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Recharge and Payable Information
-              Text("Recharge Amount", style: TextStyle(fontSize: 16)),
+              Text("Total Amount", style: TextStyle(fontSize: 16)),
               SizedBox(height: 4),
               Text("₹${widget.amount.toStringAsFixed(2)}",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 16),
-              Text("GST (18%)", style: TextStyle(fontSize: 16)),
+              Text("Delivery charge", style: TextStyle(fontSize: 16)),
               SizedBox(height: 4),
-              Text("₹${gst.toStringAsFixed(2)}",
+              Text("₹9",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 16),
               Text("Payable Amount",
@@ -59,7 +59,7 @@ class _PaymentPageState extends State<PaymentPage> {
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.black)),
-              Text("₹${payableAmount.toStringAsFixed(2)}",
+              Text("₹${(widget.amount + 9 ).toStringAsFixed(2)}",
                   style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -89,7 +89,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         SizedBox(width: 8),
                         Expanded(
                             child: Text(
-                                "₹50 Cashback in AstroBharat Wallet with this Recharge",
+                                "₹50 Cashback in AstroBharat Wallet with this order",
                                 style: TextStyle(fontSize: 14))),
                       ],
                     ),
@@ -128,8 +128,8 @@ class _PaymentPageState extends State<PaymentPage> {
                       builder: (context) => PaymentSuccessPage(
                         amount:
                             widget.amount, // Correctly passing the amount here
-                        cartItems: widget
-                            .cartItems, // Correctly passing the cart items here
+                        isSingle: widget
+                            .isSingle, // Correctly passing the cart items here
                       ),
                     ),
                   );
@@ -154,36 +154,36 @@ class _PaymentPageState extends State<PaymentPage> {
               SizedBox(height: 20),
 
               // Other Payment Methods
-              Text("Other Payments Methods",
-                  style: TextStyle(fontSize: 16, color: Colors.black54)),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  PaymentOptionIcon(
-                      assetPath: 'assets/netbanking.png', label: 'Net Banking'),
-                  PaymentOptionIcon(
-                      assetPath: 'assets/credpay.png', label: 'CRED Pay'),
-                ],
-              ),
-              SizedBox(height: 20),
+              // Text("Other Payments Methods",
+              //     style: TextStyle(fontSize: 16, color: Colors.black54)),
+              // SizedBox(height: 12),
+              // Row(
+              //   children: [
+              //     PaymentOptionIcon(
+              //         assetPath: 'assets/netbanking.png', label: 'Net Banking'),
+              //     PaymentOptionIcon(
+              //         assetPath: 'assets/credpay.png', label: 'CRED Pay'),
+              //   ],
+              // ),
+              // SizedBox(height: 20),
 
-              // Swipe to Pay
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.brown.shade700,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Swipe to Pay",
-                        style: TextStyle(color: Colors.white, fontSize: 18)),
-                    SizedBox(width: 8),
-                    Icon(Icons.double_arrow, color: Colors.white),
-                  ],
-                ),
-              ),
+              // // Swipe to Pay
+              // Container(
+              //   decoration: BoxDecoration(
+              //     color: Colors.brown.shade700,
+              //     borderRadius: BorderRadius.circular(8),
+              //   ),
+              //   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              //   child: Row(
+              //     mainAxisAlignment: MainAxisAlignment.center,
+              //     children: [
+              //       Text("Swipe to Pay",
+              //           style: TextStyle(color: Colors.white, fontSize: 18)),
+              //       SizedBox(width: 8),
+              //       Icon(Icons.double_arrow, color: Colors.white),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),

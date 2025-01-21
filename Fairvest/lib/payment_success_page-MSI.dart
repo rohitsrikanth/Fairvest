@@ -36,6 +36,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   String currentTime = '';
   String referenceNumber = '';
   String dataToSend ="";
+  String isSeller ='';
   @override
   void initState() {
     super.initState();
@@ -87,6 +88,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
           userData1 = jsonDecode(response.body);
           referenceNumber = userData1['reference_number'] ??
               'N/A'; // Get the reference number
+          isSeller = userData1['isSeller'];
           isLoading = false;
         });
       } else {
@@ -101,6 +103,17 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     setState(() {
       currentTime = DateFormat('dd-MM-yyyy, HH:mm:ss').format(DateTime.now());
     });
+  }
+
+  void _navigateToHome() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            isSeller == '1' ? FarmersHomePage() : FairvestHomePage(),
+      ),
+      (route) => false,
+    );
   }
 
   @override
@@ -184,16 +197,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                   SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => userData['business_type'] == null
-          ? FairvestHomePage()
-          : FarmersHomePage(),
-    ),
-  );
-},
-
+                      _navigateToHome();
+                    },
                     child: Text('Back to Home'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple,

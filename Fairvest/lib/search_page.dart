@@ -57,7 +57,7 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     try {
-      final String endpoint = userData['_id'] != null ? 'search1' : 'search';
+      final String endpoint = userData['business_type'] != null ? 'search1' : 'search';
       final response = await http.get(
         Uri.parse('$baseUrl/$endpoint?q=$query'),
       );

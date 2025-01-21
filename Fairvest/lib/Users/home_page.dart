@@ -40,7 +40,7 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
   Map<String, List<Map<String, dynamic>>> _productsByType = {
     'top_offers': [],
     'all_time_favorites': [],
-    'trending_now': [],
+    //'trending_now': [],
   };
 
   @override
@@ -53,7 +53,7 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
     // Fetch products across different categories
     _fetchProducts('top_offers');
     _fetchProducts('all_time_favorites');
-    _fetchProducts('trending_now');
+    //_fetchProducts('trending_now');
   }
 
   @override
@@ -199,8 +199,8 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
               "Top Offers", "Just in time for you!", 'top_offers'),
           _buildFeaturedSection("All Time Favorites", "Your favorites await!",
               'all_time_favorites'),
-          _buildFeaturedSection("Trending Now",
-              "What everyone is talking about!", 'trending_now'),
+          // _buildFeaturedSection("Trending Now",
+          //     "What everyone is talking about!", 'trending_now'),
           const SizedBox(height: 16),
           _buildShopByCategory(),
         ],
@@ -351,21 +351,14 @@ class _FairvestHomePageState extends State<FairvestHomePage> {
         ),
         child: Column(
           children: [
-            Image.asset(
-              product['image_path'] ??
-                  'assets/Dataset/Fruits and Berries/pomegranate/Image_9.jpg',
-              height: 70,
-              width: 130,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('Error loading image: ${product['image_path']}');
-                return Image.asset(
-                  'assets/Dataset/Fruits_and_Berries/pomegranate/Image_9.jpg',
-                  height: 70,
-                  width: 130,
-                );
-              },
-            ),
+           ClipRRect( 
+            borderRadius: BorderRadius.circular(8.0), 
+            child: Image.asset( product['image_path'] ?? 'assets/Dataset/Fruits_and_Berries/pomegranate/Image_9.jpg', 
+            height: 70, width: 130, fit: BoxFit.cover, 
+            errorBuilder: (context, error, stackTrace) { 
+              debugPrint('Error loading image: ${product['image_path']}'); 
+              return Image.asset( 'assets/Dataset/Fruits_and_Berries/pomegranate/Image_9.jpg', height: 70, width: 130,
+               ); }, ), ),
             const SizedBox(height: 2),
             Padding(
               padding: const EdgeInsets.all(3.0),

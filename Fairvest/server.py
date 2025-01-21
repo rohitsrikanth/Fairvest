@@ -18,7 +18,7 @@ import tensorflow as tf
 import io
 import logging
 from transformers import pipeline, AutoModelForSequenceClassification, AutoTokenizer
-
+from datetime import datetime
 app = Flask(__name__)
 
 # Enable CORS for all routes
@@ -35,10 +35,8 @@ GOOEY_API_KEY = "sk-mDh5agIgaFIsKL5bljdb1WAixSSc2rokstxWR3Qm5FBMJaRg"
 if not GOOEY_API_KEY:
     raise ValueError("API Key is missing. Please set GOOEY_API_KEY in environment variables.")
 
-cache_dir = r"C:/Users\91956/.cache/huggingface/hub/models--facebook--bart-large-mnli"
-classifier = pipeline( "zero-shot-classification", 
-                      model=AutoModelForSequenceClassification.from_pretrained("facebook/bart-large-mnli", cache_dir=cache_dir), 
-                      tokenizer=AutoTokenizer.from_pretrained("facebook/bart-large-mnli", cache_dir=cache_dir))
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+
 
 def is_farming_related(prompt): 
     labels = ["farming", "agriculture", "crops"] 
@@ -92,7 +90,7 @@ def ask():
     # Return the response
     return jsonify({"response": response_text})
 
-CONNECTION_STRING = "mongodb://localhost:27017/Fairvest"  # Default local MongoDB URI
+CONNECTION_STRING = "mongodb://localhost:27017/"  # Default local MongoDB URI
 client = MongoClient(CONNECTION_STRING)
 
 # Access your database
@@ -197,14 +195,15 @@ def predict_endpoint():
         return jsonify({"error": "An error occurred during prediction. Please try again."}), 500
     
 # Function to check if collection exists, and if not, create it
-def ensure_collection_exists(collection_name):
-    if collection_name not in db.list_collection_names():
-        db.create_collection(collection_name)
+# def ensure_collection_exists(collection_name):
+#     if collection_name not in db.list_collection_names():
+#         db.create_collection(collection_name)
 
-# Ensure 'buyers' and 'sellers' collections exist
-ensure_collection_exists("buyers")
-ensure_collection_exists("sellers")
-ensure_collection_exists("uploads")
+# # Ensure 'buyers' and 'sellers' collections exist
+# ensure_collection_exists("buyers")
+# ensure_collection_exists("sellers")
+# ensure_collection_exists("uploads")
+# ensure_collection_exists("orders")
 buyers_collection = db["buyers"]
 sellers_collection = db["sellers"]
 uploads_collection = db["uploads"]
@@ -242,8 +241,17 @@ def validate_buyer(data):
 
 # Schema for Sellers
 def validate_seller(data):
-    required_fields = ["type_of_business", "name", "phone_number", "password", "field_location"]
+    required_fields = ["business_type", "name", "phone", "password"]
     missing_fields = [field for field in required_fields if field not in data]
+    phone_pattern = r'^\+91[6-9]\d{9}$' 
+    phone_number = data.get("phone", "") 
+    print(phone_number)
+    if data.get("email"):
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, data.get("email", "")):
+            return False, "Invalid email address"
+    if not re.match(phone_pattern, phone_number): 
+        return False,"Invalid phone number"
     if missing_fields:
         return False, f"Missing fields: {', '.join(missing_fields)}"
     return True, "Valid data"
@@ -261,6 +269,77 @@ def create_buyer():
     buyer_data.update(data)
     return jsonify({"message": "Buyer created successfully"}),200
 
+@app.route('/seller', methods=['GET'])
+def get_seller():
+    seller = sellers_collection.find_one({"_id": seller_data.get("_id")})
+    if seller:
+        return jsonify({
+            "id": str(seller["_id"]),
+            "name": seller["name"],
+            "email": seller["email"],
+            "phone": seller["phone"],
+            "password": seller["password"],
+            "business_type": seller["business_type"],
+        })
+    return jsonify({"message": "Seller not found"}), 404
+
+# Update Seller Data
+@app.route('/seller', methods=['PUT'])
+def update_seller():
+    data = request.get_json()
+    
+    updated_data = {
+        "name": data.get("name"),
+        "email": data.get("email"),
+        "phone": data.get("phone"),
+        "password": data.get("password"),
+        "business_type": data.get("business_type"),
+    }
+
+    result = sellers_collection.update_one(
+        {"_id": seller_data.get("_id")}, {"$set": updated_data}
+    )
+
+    if result.modified_count > 0:
+        return jsonify({"message": "Seller info updated"})
+    return jsonify({"message": "No changes made"}), 400
+
+@app.route('/update_user', methods=['POST'])
+def update_user():
+    """Update user details based on _id, email, and name."""
+    data = request.json  # Data sent from the frontend
+    global buyer_data
+
+    # Get the filter criteria
+    user_id = buyer_data.get("_id")
+    email = buyer_data.get("email")
+    name = buyer_data.get("name")
+
+    # Ensure all criteria are present
+    if not user_id or not email or not name:
+        return jsonify({"error": "Missing _id, email, or name in the request"}), 400
+
+    # Fields to update
+    updated_fields = {
+        "name": data.get("name"),
+        "email": data.get("email"),
+        "phone": data.get("phone"),
+        "password": data.get("password"),
+        "address": data.get("address"),
+        "type": data.get("type"),
+    }
+
+    # Update the document that matches all three conditions
+    result = buyers_collection.update_one(
+        {"_id": user_id, "email": email, "name": name},
+        {"$set": updated_fields}
+    )
+
+    # Check if the update was successful
+    if result.matched_count > 0:
+        return jsonify({"message": "User updated successfully"}), 200
+    return jsonify({"error": "No matching user found"}), 404
+
 
 @app.route("/buyers_sign3", methods=["POST"])
 def signup():
@@ -270,7 +349,11 @@ def signup():
         step3_data = request.json
         if not step3_data:
             return jsonify({"error": "Invalid data"}), 400
-
+        
+        def random_string(length=3): 
+            letters = string.ascii_letters + string.digits 
+            return ''.join(random.choice(letters) for i in range (length))
+        buyer_data['_id']='C'+random_string()+buyer_data['name']
         # Update global buyer_data with step 3 details
         buyer_data.update(step3_data)
         print("Final buyer_data (after sign3):", buyer_data)
@@ -302,8 +385,10 @@ def buyers_login():
     user_name = username
     
     # Search for the buyer by email, username, or phone
-    buyer = buyers_collection.find_one({"$or": [{"email": username}, {"phone": username}]})
+    buyer = buyers_collection.find_one({"$or": [{"email": username}, {"phone": username},{'_id': username}]})
     print(buyer)
+    buyer_data.update(buyer)
+    seller_data.clear()
     if buyer:
         # Compare password with stored hash
         if buyer['password'] == password:
@@ -320,16 +405,36 @@ def get_user():
     print(user_name)
     try:
         # Query the MongoDB collection
-        user_data = buyers_collection.find_one({"email": user_name})
+        print("helo")
+        user_data = buyers_collection.find_one({"$or": [{"email": user_name}, {"phone": user_name},{'_id': user_name}]})
         if user_data:
             # Remove the '_id' field if you don't want to expose it
-            user_data.pop('_id', None)
             return jsonify(user_data), 200
         else:
             return jsonify({"error": "User not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/get_users_list/<user>', methods=['GET']) 
+def get_users_list(user): 
+    print(user)
+    if user == "Consumer": 
+        data = buyers_collection.find({}) 
+        sent_data = [] 
+        for user in data: 
+            purchase_history =[]
+            purchase_history = [ order["products_id"] for order in orders_collection.find({"buyer_id": user["email"]}) ] 
+            sent_data.append({ "id": user["email"], "name": user["name"], "profileImage": user.get("profileImage",""), "purchaseHistory": purchase_history}) 
+            print(sent_data)
+            return jsonify(sent_data), 200 
+    else: 
+        data = sellers_collection.find({"business_type": user}) 
+        sent_data = [] 
+        for seller in data: 
+            sent_data.append({ "id": seller["_id"], "name": seller["name"], "profileImage": seller.get("profileImage",""), "sales_history": seller.get("sales_history","") }) 
+        print(sent_data)
+        return jsonify(sent_data),200
+    
 
     
 @app.route('/add_to_cart', methods=['POST'])
@@ -341,10 +446,10 @@ def add_to_cart():
     if not user_name or not product_id:
         return jsonify({"error": "Invalid input"}), 400
 
-    user = buyers_collection.find_one({"name": user_name})
+    user = buyers_collection.find_one({"$or": [{"email": user_name}, {"phone": user_name},{'_id': user_name},{'name':user_name}]})
     if not user:
         return jsonify({"error": "User not found"}), 404
-
+    print(user)
     cart_item = next((item for item in user.get("cart", []) if item["product_id"] == product_id), None)
     if cart_item:
         # Update the quantity if the product is already in the cart
@@ -358,12 +463,45 @@ def add_to_cart():
             {"name": user_name},
             {"$push": {"cart": {"product_id": product_id, "quantity": 1}}}
         )
-
+    print(result)
     if result.modified_count > 0:
         return jsonify({"message": "Product added to cart successfully"}), 200
     else:
         return jsonify({"error": "Failed to add product to cart"}), 500
 
+@app.route('/update_cart', methods=['POST'])
+def update_cart():
+    data = request.json
+    user_name = data.get("user_name")
+    product_id = data.get("product_id")
+    new_quantity = data.get("quantity")
+    print(data)
+    if not user_name or not product_id or new_quantity is None:
+        return jsonify({"error": "User name, product ID, and quantity are required"}), 400
+
+    # Find the user in buyers or sellers collection
+    user = buyers_collection.find_one({"name": user_name}) or sellers_collection.find_one({"name": user_name})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Update the cart
+    updated = False
+    for item in user.get("cart", []):
+        if item["product_id"] == product_id:
+            item["quantity"] = new_quantity
+            updated = True
+            break
+
+    if not updated:
+        return jsonify({"error": "Product not found in cart"}), 404
+
+    # Save the updated user document
+    if buyers_collection.find_one({"name": user_name}):
+        buyers_collection.update_one({"name": user_name}, {"$set": {"cart": user["cart"]}})
+    else:
+        sellers_collection.update_one({"name": user_name}, {"$set": {"cart": user["cart"]}})
+
+    return jsonify({"message": "Cart updated successfully"}), 200
 
 @app.route('/search', methods=['GET'])
 def search_products():
@@ -433,9 +571,15 @@ def get_cart():
     
     # If no products found in the first collection, try the fallback collection
     if not product_list:
-        products_cursor = pnc_collection.find({"product_id": {"$in": cart_product_ids}})
+        products_cursor = pnc_collection.find({
+  "$or": [
+    {"product_id": {"$in": cart_product_ids}},
+    {"productid": {"$in": cart_product_ids}}
+  ]
+})
+
         product_list = list(products_cursor)
-    
+        print(product_list)
     # If still no products found, return an error
     if not product_list:
         return jsonify({"error": "No products found for the user's cart"}), 404
@@ -444,18 +588,21 @@ def get_cart():
     response_products = []
     for item in cart_items:
         product_id = item["product_id"]
+        print(product_id)
         # Check both product_id and productid in the product_list
         product = next((p for p in product_list if p.get("product_id") == product_id or p.get("productid") == product_id), None)
+        print(product)
         if product:
             response_products.append({
-                "product_id": product.get("productid",product.get("product_id")),
-                "name": product.get("productname"),
-                "weight": str(product.get("quantity")),
-                "price": str(product.get("discountedprice")),
-                "original_price": str(product.get("price")),
-                "image_path": product.get("image_path"),
-                "quantity": item["quantity"]
-            })
+    "product_id": product.get("productid", product.get("product_id")),
+    "name": product.get("productname"),
+    "weight": str(product.get("quantity")),
+    "price": str(product.get("discountedprice") if product.get("discountedprice") is not None else product.get("price")),
+    "original_price": str(product.get("price")),
+    "image_path": product.get("image_path"),
+    "quantity": item["quantity"]
+})
+
     
     # If no products were matched, return an error
     if not response_products:
@@ -468,6 +615,10 @@ def get_cart():
 @app.route("/sellers_sign1", methods=["POST"])
 def create_seller():
     data = request.json
+    valid, message = validate_seller(data)
+    if not valid:
+        print(message)
+        return jsonify({"error": message}), 400
     
     # Validate fields here
     if not data.get("name"):
@@ -538,6 +689,7 @@ def sellers_login():
         return jsonify({"status": "error", "message": "Missing user_id or password"}), 400
     user = sellers_collection.find_one({"$or": [{"name": user_id}, {"phone": user_id}]})
     seller_data.update(user)
+    buyer_data.clear()
     print(seller_data)
     print(user)
     if user and user.get("password") == password:
@@ -553,8 +705,9 @@ def sellers_login():
 
 @app.route('/add_to_cart1', methods=['POST'])
 def add_to_cart1():
+    global seller_data
     data = request.json
-    farmer_id = data.get("farmer_id")
+    farmer_id = data.get("user_name")
     product_id = data.get("product_id")
     
     if not farmer_id or not product_id:
@@ -577,32 +730,132 @@ def add_to_cart1():
             {"name": farmer_id},
             {"$push": {"cart": {"product_id": product_id, "quantity": 1}}}
         )
-
+    seller_data=sellers_collection.find_one({"_id":seller_data.get("_id")})
     if result.modified_count > 0:
         return jsonify({"message": "Product added to cart successfully"}), 200
     else:
         return jsonify({"error": "Failed to add product to cart"}), 500
+    
+ibid = ""
+
+@app.route('/process_order', methods=['POST'])
+def pro():
+    global ibid 
+    # Extract product_id from the incoming JSON request
+    data = request.json
+    ibid = data.get("product_id")
+    
+    if not ibid:
+        return jsonify({"error": "Product ID is required"}), 400  # Return error if no product_id
+    
+    print(f"Product ID: {ibid}")  # Just for logging, you can remove this in production
+    
+    return jsonify({"message": "Order processed successfully"}), 200
 
 import time,random,string
 
-@app.route('/orders', methods=['GET'])
-def generate_reference_number():
-    # Generate a timestamp
-    timestamp = int(time.time())
+@app.route('/orders/<id>', methods=['GET']) 
+def generate_reference_number(id):
+    print('orders start....') 
+    global buyer_data,seller_data,ibid
+    sam ='0'
+    print(buyer_data,seller_data)
+    timestamp = int(time.time()) 
+    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) 
     
-    # Generate a random string of 6 characters (letters and digits)
-    random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    
-    # Combine the timestamp and random string to form the reference number
-    reference_number = f"{timestamp}-{random_str}"
-    print(reference_number)
-    return jsonify({"reference_number": reference_number})
+    reference_number = f"{timestamp}-{random_str}" 
+    print(reference_number) 
+    now = datetime.now() 
+    products2 = [] 
+    print(ibid)
+    if id == "0": 
+        products2 = ibid
+    else:
+        if buyer_data:
+            products2 =buyer_data.get("cart")
+        else:
+            products2 =seller_data.get("cart") 
+        # if product_id: 
+        #     products2 = [order['product_id'] for order in product_id]
+       
+    print(buyer_data)
+    print(buyer_data.get("email", seller_data.get("_id")))
+    print(products2)
+    print(buyer_data.get("cart",seller_data.get("cart")))
+    order_data = {
+         "order_id": reference_number, 
+         "date": now.strftime("%Y-%m-%d"), 
+         "time": now.strftime("%H:%M:%S"), 
+         "buyer_id": buyer_data.get("email", seller_data.get("_id")), 
+         "products_id": products2 
+    } 
+
+    if buyers_collection.find_one({"email": buyer_data.get("email")}):
+        user = buyers_collection.find_one({"email": buyer_data["email"]})
+
+        if user and "cart" in user and len(user["cart"]) > 0:
+            buyers_collection.update_one({"email": user["email"]}, {"$unset": {"cart": ""}})
+    else:
+        user =sellers_collection.find_one({"_id" : seller_data["_id"]})
+        if user and "cart" in user and len(user["cart"]) > 0:
+            sellers_collection.update_one({"_id": user["_id"]}, {"$unset": {"cart": ""}})
+            sam = '1'
+
+    orders_collection.update_one( {"order_id": reference_number}, {"$set": order_data}, upsert=True )    
+    print("orders end...")
+    return jsonify({"reference_number": reference_number,"isSeller":sam})
 
 @app.route('/products1', methods=['GET'])
 def get_products1():
     products = list(pnc_collection.find({}, {'_id': 0}))  # Exclude the '_id' field
     return jsonify(products)
 
+@app.route('/get_orders', methods=['GET'])
+def get_orders100():
+    global buyer_data, seller_data
+    
+    user_id = buyer_data.get("email") if "email" in buyer_data else seller_data.get("_id")
+    if not user_id:
+        return jsonify({"error": "User ID not found"}), 404
+
+    # Find all orders for the user
+    orders = list(orders_collection.find({"buyer_id": user_id}, {"_id": 0}))
+    
+    response_data = []
+    for order in orders:
+        if 'products_id' not in order:
+            continue
+            
+        product_ids = [prod['product_id'] for prod in order['products_id']]
+        
+        # Try uploads collection first
+        products = list(uploads_collection.find(
+            {"productid": {"$in": product_ids}},
+            {"_id": 0}
+        ))
+        
+        # If not found, try pnc collection
+        if not products:
+            products = list(pnc_collection.find(
+                {"product_id": {"$in": product_ids}},
+                {"_id": 0}
+            ))
+            
+        if products:
+            order_data = {
+                'order': order.get('order_id', ''),
+                'date': str(order.get('date', '')),
+                'time': str(order.get('time', '')),
+                'logoPath': 'assets/fairvest_logo.png',
+                'products': products
+            }
+            response_data.append(order_data)
+            
+    return jsonify(response_data), 200 if response_data else 404
+
+
+
+    
 @app.route('/products200/<cat>', methods=['GET'])
 def get_products2(cat):
     print(cat)
@@ -820,9 +1073,9 @@ def upload_product():
             "productname": name,
             "farmerid": "FAR-" + seller_data.get("name"),
             "farmername": seller_data.get("name"),
-            "price": price,
+            "price": float(price),
             "description": description,
-            "quantity": units,
+            "quantity": float(units),
             "date": selected_date.strftime('%Y-%m-%d'),
             "image_path": image_path,
             "category": category.replace(' ', '_')
@@ -915,9 +1168,9 @@ def upload_product1():
             "productname": name,
             "farmerid": "FAR-" + seller_data.get("name"),
             "farmername": seller_data.get("name"),
-            "price": price,
+            "price": float(price),
             "description": description,
-            "quantity": units,
+            "quantity": float(units),
             "date": selected_date.strftime('%Y-%m-%d'),
             "image_path": image_path,
             "category": category.replace(' ', '_')
@@ -955,6 +1208,33 @@ def upload_product1():
         print(f"An error occurred: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/get_orders_pnc", methods=["GET"])
+def get_orders():
+    # Fetch current orders from the 'orders' collection
+    orders = list(orders_collection.find({}))
+    print(orders)
+    # Format response
+    orders_list = []
+    
+    for order in orders:
+        farmer = sellers_collection.find_one({"_id" : order["buyer_id"]})
+        if farmer:
+            farmer ={"name":"unknown"}
+        print(farmer)
+        da = order["products_id"][0]
+        product = pnc_collection.find_one({"productid" : da.get("products_id")})
+        orders_list.append({
+            "date": order["date"],
+            "time": order["time"],
+            "farmer_name": farmer.get("name", "Unknown"), 
+            "product_name": product.get("productname", "Unknown"),
+            "quantity": da.get("quantity"),
+            "price": order.get("price",0)
+        })
+    print(orders_list)
+    return jsonify(orders_list)
 
 @app.route('/manage-products', methods=['GET'])
 def manage_products():
@@ -1183,6 +1463,139 @@ def delete_product(product_id):
     if result.deleted_count > 0:
         return jsonify({'message': 'Product deleted successfully'}), 200
     return jsonify({'error': 'Product not found'}), 404  
+
+
+
+@app.route('/orders100', methods=['GET'])
+def get_orders10():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    orders = list(db.orders.find({"date": {"$gte": start_date, "$lte": end_date}}))
+    return jsonify(orders)
+
+@app.route('/top-products100', methods=['GET'])
+def top_products100():
+    pipeline = [
+        {"$unwind": "$products_id"},
+        {"$group": {"_id": "$products_id.product_id", "total_quantity": {"$sum": "$products_id.quantity"}}},
+        {"$sort": {"total_quantity": -1}},
+        {"$limit": 10}
+    ]
+    result = list(db.orders.aggregate(pipeline))
+    return jsonify(result)
+
+@app.route('/buyer-stats', methods=['GET'])
+def buyer_stats():
+    pipeline = [
+        {"$group": {"_id": "$buyer_id", "total_orders": {"$sum": 1}}},
+        {"$sort": {"total_orders": -1}}
+    ]
+    result = list(db.orders.aggregate(pipeline))
+    return jsonify(result)
+
+@app.route('/revenue', methods=['GET'])
+def revenue():
+    pipeline = [
+        {"$unwind": "$products_id"},
+        {"$lookup": {"from": "products", "localField": "products_id.product_id", "foreignField": "product_id", "as": "product_details"}},
+        {"$unwind": "$product_details"},
+        {"$project": {"date": 1, "revenue": {"$multiply": ["$products_id.quantity", "$product_details.price"]}}},
+        {"$group": {"_id": "$date", "total_revenue": {"$sum": "$revenue"}}}
+    ]
+    result = list(db.orders.aggregate(pipeline))
+    return jsonify(result)
+
+
+@app.route('/products200', methods=['GET'])
+def get_products500():
+    # Fetch products from PNC and Uploads tables
+    pnc_products = list(db.pnc.find({}, {'_id': 0}))
+    uploads_products = list(db.uploads.find({}, {'_id': 0}))
+    
+    # Merge both collections
+    all_products = pnc_products + uploads_products
+    return jsonify(all_products)
+
+@app.route('/analysis200', methods=['GET'])
+def product_analysis500():
+    # Fetch all products
+    pnc_products = list(db.pnc.find({}, {'_id': 0}))
+    uploads_products = list(db.uploads.find({}, {'_id': 0}))
+    all_products = pnc_products + uploads_products
+
+    # Analysis
+    top_discounted = sorted(all_products, key=lambda x: x['discount_percentage'], reverse=True)[:5]
+    high_rated = sorted(all_products, key=lambda x: x['star'], reverse=True)[:5]
+    category_count = {}
+    for product in all_products:
+        category = product.get("category", "Unknown")
+        category_count[category] = category_count.get(category, 0) + 1
+
+    return jsonify({
+        "top_discounted": top_discounted,
+        "high_rated": high_rated,
+        "category_count": category_count
+    })
+
+@app.route('/farmer/<farmer_id>', methods=['GET'])
+def get_farmer_details(farmer_id):
+    farmer = db.sellers.find_one({'_id': farmer_id})
+    if farmer:
+        return jsonify(farmer)
+    return jsonify({'error': 'Farmer not found'}), 404
+
+@app.route('/check_review/<order_id>/<product_id>', methods=['GET'])
+def check_review(order_id, product_id):
+    review = db.reviews.find_one({
+        'order_id': order_id,
+        'product_id': product_id
+    })
+    return jsonify({'exists': review is not None})
+
+# Submit a new review
+@app.route('/submit_review', methods=['POST'])
+def submit_review():
+    data = request.json
+    
+    # Create review document
+    review = {
+        'order_id': data['order_id'],
+        'product_id': data['product_id'],
+        'farmer_id': data['farmer_id'],
+        'rating': data['rating'],
+        'review': data['review'],
+        'date': data['date']
+    }
+    
+    try:
+        # Insert review
+        db.reviews.insert_one(review)
+        
+        # Update product's average rating
+        product_reviews = db.reviews.find({'product_id': data['product_id']})
+        total_rating = sum(r['rating'] for r in product_reviews)
+        count = db.reviews.count_documents({'product_id': data['product_id']})
+        avg_rating = total_rating / count
+        
+        db.products.update_one(
+            {'productid': data['product_id']},
+            {'$set': {'average_rating': avg_rating}}
+        )
+        
+        # Add review to farmer's feedback
+        db.sellers.update_one(
+            {'_id': data['farmer_id']},
+            {'$push': {'feedback': {
+                'rating': data['rating'],
+                'comment': data['review'],
+                'date': data['date']
+            }}}
+        )
+        
+        return jsonify({'message': 'Review submitted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 # Run the Flask application
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True) 

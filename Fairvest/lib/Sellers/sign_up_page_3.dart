@@ -182,12 +182,12 @@ class _SignUpAddressPageState extends State<SignUpAddressPage> {
                   children: [
                     _buildAddressTypeButton('Farming Land', Icons.landscape),
                     const SizedBox(width: 20),
-                    _buildAddressTypeButton('Factory', Icons.factory),
-                    const SizedBox(width: 20),
+                    // _buildAddressTypeButton('Factory', Icons.factory),
+                    // const SizedBox(width: 20),
                     _buildAddressTypeButton(
                         'Pesticide and Crop Selling Shop', Icons.local_florist),
-                    const SizedBox(width: 20),
-                    _buildAddressTypeButton('Wholesale Sellers', Icons.store),
+                    // const SizedBox(width: 20),
+                    // _buildAddressTypeButton('Wholesale Sellers', Icons.store),
                   ],
                 ),
               ),
