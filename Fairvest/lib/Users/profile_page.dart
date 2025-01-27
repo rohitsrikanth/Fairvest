@@ -64,7 +64,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to home page
+        Navigator.of(context).pushNamedAndRemoveUntil('/userhome', (route) => false);
+        return false; // Prevent default back button action
+      },child:Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text('Profile'),
@@ -246,7 +251,7 @@ Navigator.pushNamed(context, '/userhome');
               ),
             ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-    );
+    ),);
   }
 
   BottomNavigationBar _buildBottomNavigationBar() {

@@ -39,6 +39,7 @@ class _SearchPageState extends State<SearchPage> {
             userData = jsonDecode(response.body);
             isLoading = false;
           });
+          print(userData);
         } else {
           throw Exception('Failed to fetch user details');
         }
@@ -82,9 +83,15 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+ @override
+Widget build(BuildContext context) {
+  return WillPopScope(
+  onWillPop: () async {
+    // Handle back button press
+    
+    Navigator.of(context).pop('');
+    return Future.value(false); // Prevent default back button actionScaffold(
+  },child: Scaffold(
       appBar: AppBar(
         title: const Text('Search'),
         backgroundColor: Colors.green,
@@ -143,6 +150,6 @@ class _SearchPageState extends State<SearchPage> {
           ],
         ),
       ),
-    );
+    ),);
   }
 }

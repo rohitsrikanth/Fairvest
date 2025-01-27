@@ -10,7 +10,12 @@ class DrawerMenuPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to home page
+        Navigator.of(context).pushNamedAndRemoveUntil('/userhome', (route) => false);
+        return false; // Prevent default back button action
+      },child:Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -178,6 +183,6 @@ class DrawerMenuPage extends StatelessWidget {
           // ),
         ],
       ),
-    );
+    ),);
   }
 }

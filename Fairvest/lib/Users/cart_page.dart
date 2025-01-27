@@ -222,7 +222,16 @@ class _CartPageState extends State<CartPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+    onWillPop: () async {
+      // Check the value of userData['business_type'] and navigate accordingly
+      if (userData['business_type'] != null) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/farmer', (route) => false);
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil('/userhome', (route) => false);
+      }
+      return false; // Prevent default back button action
+    },child: Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text("Cart"),
@@ -257,7 +266,7 @@ class _CartPageState extends State<CartPage> {
           ],
         ),
       ),
-    );
+    ),);
   }
 
   Widget _buildSummary() {

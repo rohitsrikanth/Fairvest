@@ -63,7 +63,12 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to home page
+        Navigator.of(context).pushNamedAndRemoveUntil('/farmer', (route) => false);
+        return false; // Prevent default back button action
+      },child:Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.green,
         title: const Text('Profile'),
@@ -217,7 +222,7 @@ class _FarmersProfilePageState extends State<FarmersProfilePage> {
                 ],
               ),
             ),
-    );
+    ),);
   }
 
   Widget _buildMenuOption(BuildContext context,

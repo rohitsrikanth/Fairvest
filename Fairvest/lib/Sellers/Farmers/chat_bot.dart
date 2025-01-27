@@ -85,7 +85,12 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        // Navigate to home page
+        Navigator.of(context).pushNamedAndRemoveUntil('/farmer', (route) => false);
+        return false; // Prevent default back button action
+      },child:Scaffold(
       appBar: AppBar(
         title: Text("Farmer's Chat Bot"),
         backgroundColor: Colors.green,
@@ -252,7 +257,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
           ),
         ],
       ),
-    );
+    ),);
   }
 }
 
