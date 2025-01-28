@@ -1555,13 +1555,14 @@ def check_review(order_id, product_id):
 # Submit a new review
 @app.route('/submit_review', methods=['POST'])
 def submit_review():
+    global seller_data
     data = request.json
     
     # Create review document
     review = {
         'order_id': data['order_id'],
         'product_id': data['product_id'],
-        'farmer_id': data['farmer_id'],
+        'farmer_id': seller_data.get("_id"),
         'rating': data['rating'],
         'review': data['review'],
         'date': data['date']
@@ -1596,6 +1597,21 @@ def submit_review():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+@app.route('/delete_account', methods=['DELETE'])
+def delete_acc():
+    data = request.json
+    phone = data.get("phone")
+    
+    if not phone:
+        return jsonify({"error": "Phone number is required"}), 400
+
+    # Deleting from sellers collection
+    sellers_collection.delete_one({"phone": phone})
+
+    # Deleting from buyers collection
+    buyers_collection.delete_one({"phone": phone})
+
+    return jsonify({"message": "Account deleted successfully"}), 200
 # Run the Flask application
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True) 
