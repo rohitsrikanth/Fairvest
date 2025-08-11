@@ -13,13 +13,35 @@
     <main>
         <p>We understand that you may want to delete your account. Please provide your phone number below to request account deletion. Once submitted, your account and associated data will be permanently deleted.</p>
 
-        <form action="http://180.235.121.245:4082/delete_account" method="POST">
+        <form id="deleteForm">
             <label for="phone">Enter Your Phone Number:</label><br>
             <input type="tel" id="phone" name="phone" placeholder="e.g., +911234567890" required><br><br>
-            <button type="submit">Delete Account</button>
+            <button type="button" onclick="deleteAccount()">Delete Account</button>
         </form>
 
         <p><strong>Note:</strong> Ensure that the phone number provided matches the one registered with your account. If you experience any issues, please contact us at: customercare.fairvest@gmail.com</p>
     </main>
+
+    <script>
+        function deleteAccount() {
+            const phone = document.getElementById('phone').value;
+            fetch('http://180.235.121.245:4082/delete_account', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ phone })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error: ${data.error}`);
+                } else {
+          alert(`Success: ${data.message}`);
+        }
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
 </body>
 </html>

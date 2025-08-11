@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify ,send_from_directory
+from flask import Flask, request, jsonify ,send_from_directory,render_template
 from pymongo import MongoClient
 from flask_cors import CORS
 import re
@@ -90,7 +90,7 @@ def ask():
     # Return the response
     return jsonify({"response": response_text})
 
-CONNECTION_STRING = "mongodb://localhost:27017/"  # Default local MongoDB URI
+CONNECTION_STRING = "mongodb+srv://2005rohitsrikanth:rohit17Z@cluster0.l036j.mongodb.net/"  # Default local MongoDB URI
 client = MongoClient(CONNECTION_STRING)
 
 # Access your database
@@ -1552,6 +1552,7 @@ def check_review(order_id, product_id):
     })
     return jsonify({'exists': review is not None})
 
+
 # Submit a new review
 @app.route('/submit_review', methods=['POST'])
 def submit_review():
@@ -1599,7 +1600,7 @@ def submit_review():
     
 @app.route('/delete_account', methods=['DELETE'])
 def delete_acc():
-    data = request.json
+    data = request.get_json()
     phone = data.get("phone")
     
     if not phone:
@@ -1612,6 +1613,19 @@ def delete_acc():
     buyers_collection.delete_one({"phone": phone})
 
     return jsonify({"message": "Account deleted successfully"}), 200
+
+@app.route('/delete')
+def delete1():
+    return render_template('delete_account.html')
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('privacy_policy.html')
+
+@app.route('/delete-account')
+def delete_account():
+    return render_template('delete_account.html')
+
 # Run the Flask application
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True) 
